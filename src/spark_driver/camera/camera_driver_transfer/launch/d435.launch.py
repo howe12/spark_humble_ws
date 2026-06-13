@@ -1,0 +1,145 @@
+# Copyright (c) 2022 NXROBO
+#
+# /* Author: litian.zhuang */
+# /* email: litian.zhuang@nxrobo.com */
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# 
+
+
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import (DeclareLaunchArgument, GroupAction,
+                            IncludeLaunchDescription, SetEnvironmentVariable)
+from launch.conditions import IfCondition, LaunchConfigurationEquals
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node, PushRosNamespace
+
+
+def generate_launch_description():
+    # -------------------- 1.功能包路径定义 --------------------
+    realsense2_camera_dir = get_package_share_directory('realsense2_camera')
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
+
+    # -------------------- 2.参数声明 --------------------
+    declared_arguments = []
+    declared_arguments.append(DeclareLaunchArgument(
+        'dp_rgist', 
+        default_value='false',
+        choices=['true', 'false'],
+        description='Whether to run dp_rgist'
+    ))
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'enable_rgbd', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run enable_rgbd'
+    ))
+
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'pointcloud.enable', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run pointcloud.enable'
+    ))
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'enable_depth', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run enable_depth'
+        ))
+                
+    declared_arguments.append(DeclareLaunchArgument(
+        'enable_color', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run enable_color'
+    ))
+        
+    declared_arguments.append(DeclareLaunchArgument(
+        'align_depth.enable', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run align_depth.enable'
+    ))
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'enable_sync', 
+        default_value='true',
+        choices=['true', 'false'],
+        description='Whether to run enable_sync'
+    ))            
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'serial_no', 
+        default_value="''",   # 243522071475
+        description='d435 camera serial number'
+    ))
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'camera_namespace', 
+        default_value='',   # 'camera'
+        description='d435 camera namespace'
+    ))
+
+    declared_arguments.append(DeclareLaunchArgument(
+        'camera_name', 
+        default_value='camera',   
+        description='d435 camera name'
+    ))
+    declared_arguments.append(DeclareLaunchArgument(
+        'namespace', 
+        default_value='',
+        description='The name of namespace'
+    ))  
+
+    # -------------------- 3.参数引用 --------------------
+    dp_rgist = LaunchConfiguration('dp_rgist')   
+    enable_rgbd = LaunchConfiguration('enable_rgbd')  
+    pointcloud_enable = LaunchConfiguration('pointcloud.enable')
+    enable_depth = LaunchConfiguration('enable_depth')
+    enable_color = LaunchConfiguration('enable_color')
+    align_depth_enable = LaunchConfiguration('align_depth.enable')
+    enable_sync = LaunchConfiguration('enable_sync')
+    serial_no = LaunchConfiguration('serial_no')   
+    camera_namespace = LaunchConfiguration('namespace') 
+    camera_name = LaunchConfiguration('camera_name') 
+
+
+    # -------------------- 4.相机驱动程序 --------------------
+    d435_camera_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(realsense2_camera_dir, 'launch',
+                                                       'rs_launch.py')),
+            launch_arguments={'enable_rgbd': enable_rgbd,
+                                'pointcloud.enable': pointcloud_enable,
+                                'enable_depth': enable_depth,
+                                'enable_color': enable_color,
+                                'align_depth.enable': align_depth_enable,
+                                'enable_sync': enable_sync,
+                                'camera_namespace': camera_namespace,
+                                'camera_name': camera_name,
+                                'publish_tf': "false",
+                                'serial_no': serial_no, # 243522071475, 135122073920
+                                }.items())
+
+
+    nodes = [
+        d435_camera_launch,
+    ]
+    return LaunchDescription(declared_arguments + nodes)
