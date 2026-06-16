@@ -30,12 +30,10 @@ echo -e "${YELLOW}[Layer 1] colcon build${NC}"
 cd "$PROJECTPATH"
 source /opt/ros/humble/setup.bash 2>/dev/null
 
-# Only build spark_bringup + spark_rtab_map (the packages Wave 1 touched)
-# Skip known-broken: openslam_gmapping, smach_msgs
+# Full workspace build — all packages now compile cleanly
 BUILD_LOG=$(unset VIRTUAL_ENV; export PATH=/usr/bin:/usr/local/bin:$PATH; colcon build \
     --symlink-install \
-    --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 \
-    --packages-select spark_bringup spark_base spark_description spark_teleop spark_follower spark_navigation2 spark_rtab_map spark_slam_transfer spark_yolov8 camera_driver_transfer lidar_driver_transfer realsense2_description spark_common_interfaces ydlidar_ros2_driver spark_cartographer openslam_gmapping slam_gmapping 2>&1)
+    --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 2>&1)
 BUILD_RC=$?
 
 if echo "$BUILD_LOG" | grep -q "Summary:.*packages finished"; then
@@ -180,6 +178,6 @@ else
     echo "    验证命令(另开终端):"
     echo "      ros2 topic list | grep -E 'odom|scan|color|camera'"
     echo ""
-    echo "  本次改动涉及: driver_bringup 的 camera_type_tel/lidar_type_tel 参数传递"
-    echo "  如果遥控正常，说明参数链路通了 ✅"
+    echo "  本次改动涉及: Wave 1/2 — 参数链修复 + 15 个 launch 文件重构"
+    echo "  如果遥控正常 + gmapping 建图正常，说明重构全部通过 ✅"
 fi
