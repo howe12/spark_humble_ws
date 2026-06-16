@@ -36,6 +36,18 @@ def generate_launch_description():
     spark_bringup_dir = get_package_share_directory('spark_bringup')
 
     # -------------------- 2.参数声明 --------------------
+    # LaunchConfiguration refs before DeclareLaunchArgument (color_topic_name uses camera_type_tel)
+    enable_arm_tel = LaunchConfiguration('enable_arm_tel')
+    arm_type_tel = LaunchConfiguration('arm_type_tel')
+    camera_type_tel = LaunchConfiguration('camera_type_tel')
+    lidar_type_tel = LaunchConfiguration('lidar_type_tel')  
+    namespace = LaunchConfiguration('namespace')  
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    start_slam_rviz = LaunchConfiguration('start_slam_rviz')  
+    start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')  
+    localization = LaunchConfiguration('localization')
+    color_topic_name = LaunchConfiguration('color_topic_name')
+    
     declared_arguments = declare_common_arguments()
     declared_arguments.append(DeclareLaunchArgument(
         'start_bringup_rviz', 
@@ -52,18 +64,6 @@ def generate_launch_description():
         description='Launch in localization mode.'
     ))
     
-    # -------------------- 3.参数引用 --------------------
-    enable_arm_tel = LaunchConfiguration('enable_arm_tel')
-    arm_type_tel = LaunchConfiguration('arm_type_tel')
-    camera_type_tel = LaunchConfiguration('camera_type_tel')
-    lidar_type_tel = LaunchConfiguration('lidar_type_tel')  
-    namespace = LaunchConfiguration('namespace')  
-    use_sim_time = LaunchConfiguration('use_sim_time')
-    start_slam_rviz = LaunchConfiguration('start_slam_rviz')  
-    start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')  
-    localization = LaunchConfiguration('localization')
-    color_topic_name = LaunchConfiguration('color_topic_name')
-
    
     # -------------------- 4.机器人总驱动程序 --------------------
     spark_bringup_launch = IncludeLaunchDescription(
