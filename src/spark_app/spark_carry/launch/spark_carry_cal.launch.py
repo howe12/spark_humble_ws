@@ -83,7 +83,7 @@ def generate_launch_description():
                                                        'pro_control_nomoveit.launch.py')),
             launch_arguments={
                                 'namespace': namespace,
-                             }.items()),
+                             }.items())
 
     # -------------------- 6.hsv检测程序 --------------------
     hsv_detection_node = launch_ros.actions.Node(

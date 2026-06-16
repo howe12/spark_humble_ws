@@ -84,7 +84,7 @@ def generate_launch_description():
                                                        'pro_control_nomoveit.launch.py')),
             launch_arguments={
                                 'namespace': namespace,
-                             }.items()),
+                             }.items())
 
     # -------------------- 6.机械臂控制程序 --------------------
     hsv_processor_node = launch_ros.actions.Node(
