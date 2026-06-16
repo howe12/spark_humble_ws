@@ -36,26 +36,31 @@ def generate_launch_description():
                                                 description='Base link frame id')
     arg_namespace= DeclareLaunchArgument('namespace', default_value='',
                                                 description='The name of namespace')
+    arg_frame_prefix = DeclareLaunchArgument('frame_prefix', default_value='',
+                                                description='TF frame prefix for multi-robot (e.g. "robot1/")')
 
     remappings = [('/tf', 'tf'),
                 ('/tf_static', 'tf_static')]
-    
+
     spark_base_node = launch_ros.actions.Node(
         package='spark_base',
-        executable='spark_base_node',  
+        executable='spark_base_node',
         output='screen',
         emulate_tty=True,
         namespace = launch.substitutions.LaunchConfiguration('namespace'),
-        # remappings=remappings,
+        remappings=remappings,
         parameters=[{
-                'serial_port': launch.substitutions.LaunchConfiguration('serial_port'),                
+                'serial_port': launch.substitutions.LaunchConfiguration('serial_port'),
                 'base_frame_id': launch.substitutions.LaunchConfiguration('base_frame_id'),
                 'odom_frame_id': launch.substitutions.LaunchConfiguration('odom_frame_id'),
+                'frame_prefix': launch.substitutions.LaunchConfiguration('frame_prefix'),
         }])
 
     return LaunchDescription([
-        arg_serial_port,        
+        arg_serial_port,
         arg_base_frame_id,
         arg_odom_frame_id,
+        arg_namespace,
+        arg_frame_prefix,
         spark_base_node
     ])

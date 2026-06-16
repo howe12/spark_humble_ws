@@ -27,10 +27,23 @@ namespace NxSparkBase
 		this->declare_parameter("serial_port", "/dev/sparkBase");
 		this->declare_parameter("base_frame_id", "base_footprint");
 		this->declare_parameter("odom_frame_id", "odom");
+		this->declare_parameter("frame_prefix", "");
 		this->declare_parameter("battery/status", 0);
+		std::string frame_prefix;
 		this->get_parameter_or<std::string>("serial_port", serial_port, new_serial_port);
 		this->get_parameter_or<std::string>("base_frame_id", base_frame_id, "base_footprint");
 		this->get_parameter_or<std::string>("odom_frame_id", odom_frame_id, "odom");
+		this->get_parameter_or<std::string>("frame_prefix", frame_prefix, "");
+		// Apply frame_prefix to support multi-robot scenarios.
+		// When frame_prefix is empty (default), behavior is unchanged.
+		if (!frame_prefix.empty()) {
+			if (!odom_frame_id.empty() && odom_frame_id.rfind(frame_prefix, 0) != 0) {
+				odom_frame_id = frame_prefix + odom_frame_id;
+			}
+			if (!base_frame_id.empty() && base_frame_id.rfind(frame_prefix, 0) != 0) {
+				base_frame_id = frame_prefix + base_frame_id;
+			}
+		}
 		tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
 		cmd_vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
 			"cmd_vel", 10, std::bind(&SparkBaseDriver::cmdVelReceived, this, std::placeholders::_1));

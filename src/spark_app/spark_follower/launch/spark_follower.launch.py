@@ -91,7 +91,7 @@ def generate_launch_description():
     spark_follower_node = launch_ros.actions.Node(
         package='spark_follower',
         executable='spark_follower_node',  
-        namespace='namespace',
+        namespace=namespace,
         output='screen',
         emulate_tty=True,
         )

@@ -96,10 +96,15 @@ def generate_launch_description():
         description='Whether to start_bringup_rviz'
     ))   
     declared_arguments.append(DeclareLaunchArgument(
-        'namespace', 
+        'namespace',
         default_value='',
         description='The name of namespace'
-    ))   
+    ))
+    declared_arguments.append(DeclareLaunchArgument(
+        'frame_prefix',
+        default_value='',
+        description='TF frame prefix for multi-robot (e.g. "robot1/"). Empty for single-robot.'
+    ))
 
     # -------------------- 3.参数引用 --------------------
     serial_port = LaunchConfiguration('serial_port')
@@ -109,10 +114,11 @@ def generate_launch_description():
     start_camera = LaunchConfiguration('start_camera')
     start_lidar = LaunchConfiguration('start_lidar')
     camera_type_tel = LaunchConfiguration('camera_type_tel')
-    lidar_type_tel = LaunchConfiguration('lidar_type_tel')   
-    dp_rgist = LaunchConfiguration('dp_rgist')   
-    start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')  
+    lidar_type_tel = LaunchConfiguration('lidar_type_tel')
+    dp_rgist = LaunchConfiguration('dp_rgist')
+    start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')
     namespace = LaunchConfiguration('namespace')
+    frame_prefix = LaunchConfiguration('frame_prefix')
     # use_namespace = PythonExpression(["'True' if '", namespace, "' != '' else 'False'"])
 
     # -------------------- 4.机器人模型程序 --------------------
@@ -124,7 +130,8 @@ def generate_launch_description():
                             'enable_arm_tel': enable_arm_tel,
                             'start_description_rviz' : 'false',
                             'arm_type_tel': arm_type_tel,
-                            'namespace': namespace}.items())
+                            'namespace': namespace,
+                            'frame_prefix': frame_prefix}.items())
 
     # -------------------- 5.机器人底盘驱动程序 --------------------
     spark_base_node = IncludeLaunchDescription(
@@ -132,7 +139,8 @@ def generate_launch_description():
                                                        'spark_base.launch.py')),
             condition=IfCondition(start_base),
             launch_arguments={'serial_port': serial_port,
-                              'namespace': namespace
+                              'namespace': namespace,
+                              'frame_prefix': frame_prefix
                                 }.items())
     
     # -------------------- 6.机器人相机驱动程序 --------------------
@@ -141,14 +149,16 @@ def generate_launch_description():
                                                        'start_camera.launch.py')),
             condition=IfCondition(start_camera),
             launch_arguments={'dp_rgist': dp_rgist,
-                              'namespace': namespace}.items())
+                              'namespace': namespace,
+                              'camera_type_tel': camera_type_tel}.items())
 
     # -------------------- 7.机器人雷达驱动程序 --------------------
     spark_lidar_node = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(lidar_driver_transfer_dir, 'launch',
                                                        'start_lidar.launch.py')),
             condition=IfCondition(start_lidar),
-            launch_arguments={'namespace': namespace}.items())
+            launch_arguments={'namespace': namespace,
+                              'lidar_type_tel': lidar_type_tel}.items())
 
     # -------------------- 8.Rviz可视化界面 --------------------
     rviz_config_dir = os.path.join(get_package_share_directory('spark_bringup'), 'rviz', 'urdf.rviz')

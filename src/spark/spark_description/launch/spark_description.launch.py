@@ -84,9 +84,14 @@ def generate_launch_description():
         )
     )
     declared_arg.append(DeclareLaunchArgument(
-            'namespace', 
+            'namespace',
             default_value='',
             description='The name of namespace'
+    ))
+    declared_arg.append(DeclareLaunchArgument(
+            'frame_prefix',
+            default_value='',
+            description='TF frame prefix for multi-robot scenarios (e.g. "robot1/"). Default empty for single-robot.'
     ))
 
     # -------------------- 3.参数引用 --------------------
@@ -95,8 +100,9 @@ def generate_launch_description():
     camera_type_tel = LaunchConfiguration('camera_type_tel')
     lidar_type_tel = LaunchConfiguration('lidar_type_tel')
     robot_description = LaunchConfiguration('robot_description')
-    start_description_rviz = LaunchConfiguration('start_description_rviz')  
-    namespace = LaunchConfiguration('namespace')  
+    start_description_rviz = LaunchConfiguration('start_description_rviz')
+    namespace = LaunchConfiguration('namespace')
+    frame_prefix = LaunchConfiguration('frame_prefix')  
 
     remappings = [('/tf', 'tf'),
                 ('/tf_static', 'tf_static')]
@@ -139,9 +145,10 @@ def generate_launch_description():
         namespace=LaunchConfiguration('namespace'),
         parameters=[{
             'robot_description': robot_description_content,
+            'frame_prefix': LaunchConfiguration('frame_prefix'),
         }],
         output={'both': 'log'},
-        # remappings=remappings,
+        remappings=remappings,
     )
 
     # -------------------- 6.rviz2_node --------------------
