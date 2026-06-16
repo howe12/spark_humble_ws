@@ -60,11 +60,14 @@ def generate_launch_description():
 
 
     # -------------------- 4.机器人雷达驱动 --------------------
-    lidar_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(ydlidar_ros2_driver_dir, 'launch',
-                                                       'ydlidar_g6_launch.py')),
-            launch_arguments={'start_lidar_rviz': start_lidar_rviz,
-                              'namespace': namespace,}.items())
+    lidar_launch = GroupAction([
+        PushRosNamespace(namespace),
+        IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(ydlidar_ros2_driver_dir, 'launch',
+                                                           'ydlidar_g6_launch.py')),
+                launch_arguments={'start_lidar_rviz': start_lidar_rviz,
+                                  'namespace': namespace,}.items())
+    ])
 
 
     nodes = [

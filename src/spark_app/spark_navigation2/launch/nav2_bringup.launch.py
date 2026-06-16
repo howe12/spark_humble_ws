@@ -163,39 +163,48 @@ def generate_launch_description():
             # remappings=remappings,
             output='screen'),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
-            condition=IfCondition(slam),
-            launch_arguments={'namespace': namespace,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'use_respawn': use_respawn,
-                              'nav2_params_file': nav2_params_file}.items()),
+        GroupAction([
+            PushRosNamespace(namespace),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
+                condition=IfCondition(slam),
+                launch_arguments={'namespace': namespace,
+                                  'use_sim_time': use_sim_time,
+                                  'autostart': autostart,
+                                  'use_respawn': use_respawn,
+                                  'nav2_params_file': nav2_params_file}.items()),
+        ]),
 
-        IncludeLaunchDescription(
+        GroupAction([
+            PushRosNamespace(namespace),
+            IncludeLaunchDescription(
 
-            PythonLaunchDescriptionSource(os.path.join(spark_navigation2_dir,
-                                                       'nav2_localization_launch.py')),
-            condition=IfCondition(PythonExpression(['not ', slam])),
-            launch_arguments={'namespace': namespace,
-                              'map': map_yaml_file,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'nav2_params_file': nav2_params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn,
-                              'container_name': 'nav2_container'}.items()),
+                PythonLaunchDescriptionSource(os.path.join(spark_navigation2_dir,
+                                                           'nav2_localization_launch.py')),
+                condition=IfCondition(PythonExpression(['not ', slam])),
+                launch_arguments={'namespace': namespace,
+                                  'map': map_yaml_file,
+                                  'use_sim_time': use_sim_time,
+                                  'autostart': autostart,
+                                  'nav2_params_file': nav2_params_file,
+                                  'use_composition': use_composition,
+                                  'use_respawn': use_respawn,
+                                  'container_name': 'nav2_container'}.items()),
+        ]),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(spark_navigation2_dir,
-                                                       'nav2_navigation.launch.py')),
-            launch_arguments={'namespace': namespace,
-                              'use_sim_time': use_sim_time,
-                              'autostart': autostart,
-                              'nav2_params_file': nav2_params_file,
-                              'use_composition': use_composition,
-                              'use_respawn': use_respawn,
-                              'container_name': 'nav2_container'}.items()),
+        GroupAction([
+            PushRosNamespace(namespace),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(spark_navigation2_dir,
+                                                           'nav2_navigation.launch.py')),
+                launch_arguments={'namespace': namespace,
+                                  'use_sim_time': use_sim_time,
+                                  'autostart': autostart,
+                                  'nav2_params_file': nav2_params_file,
+                                  'use_composition': use_composition,
+                                  'use_respawn': use_respawn,
+                                  'container_name': 'nav2_container'}.items()),
+        ]),
     ])
     
     return LaunchDescription(declared_arguments + [bringup_cmd_group])

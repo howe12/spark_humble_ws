@@ -123,20 +123,23 @@ def generate_launch_description():
 
 
     # -------------------- 4.相机驱动程序 --------------------
-    d435_camera_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(realsense2_camera_dir, 'launch',
-                                                       'rs_launch.py')),
-            launch_arguments={'enable_rgbd': enable_rgbd,
-                                'pointcloud.enable': pointcloud_enable,
-                                'enable_depth': enable_depth,
-                                'enable_color': enable_color,
-                                'align_depth.enable': align_depth_enable,
-                                'enable_sync': enable_sync,
-                                'camera_namespace': camera_namespace,
-                                'camera_name': camera_name,
-                                'publish_tf': "false",
-                                'serial_no': serial_no, # 243522071475, 135122073920
-                                }.items())
+    d435_camera_launch = GroupAction([
+        PushRosNamespace(namespace),
+        IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(os.path.join(realsense2_camera_dir, 'launch',
+                                                           'rs_launch.py')),
+                launch_arguments={'enable_rgbd': enable_rgbd,
+                                    'pointcloud.enable': pointcloud_enable,
+                                    'enable_depth': enable_depth,
+                                    'enable_color': enable_color,
+                                    'align_depth.enable': align_depth_enable,
+                                    'enable_sync': enable_sync,
+                                    'camera_namespace': camera_namespace,
+                                    'camera_name': camera_name,
+                                    'publish_tf': "false",
+                                    'serial_no': serial_no, # 243522071475, 135122073920
+                                    }.items())
+    ])
 
 
     nodes = [
