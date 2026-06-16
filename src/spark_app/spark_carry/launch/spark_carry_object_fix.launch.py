@@ -46,6 +46,7 @@ def generate_launch_description():
     lidar_type_tel = LaunchConfiguration('lidar_type_tel')   
     dp_rgist = LaunchConfiguration('dp_rgist')   
     start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')   
+    namespace = LaunchConfiguration('namespace')   
 
 
     declare_serial_port = DeclareLaunchArgument(
@@ -98,7 +99,8 @@ def generate_launch_description():
                               'camera_type_tel' : camera_type_tel,
                               'lidar_type_tel': lidar_type_tel,
 							                'dp_rgist': dp_rgist,
-                              'start_bringup_rviz' : start_bringup_rviz,}.items()),
+                              'start_bringup_rviz' : start_bringup_rviz,
+                              'namespace': namespace,}.items()),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(swiftpro_driver_dir, 'launch',
@@ -110,6 +112,7 @@ def generate_launch_description():
     s_carry_object_node = launch_ros.actions.Node(
         package='spark_carry',
         executable='s_carry_object',  
+        namespace=namespace,
         output='screen',
         emulate_tty=True,
         remappings=[('/camera/color/image_raw', LaunchConfiguration('color_topic_name'))],
@@ -119,6 +122,7 @@ def generate_launch_description():
     cali_send_topic_node = launch_ros.actions.Node(
         package='spark_carry',
         executable='cmd_spark_carry_start.sh',  
+        namespace=namespace,
         output='screen',
         emulate_tty=True,
         )

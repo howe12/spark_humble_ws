@@ -47,6 +47,7 @@ def generate_launch_description():
     rviz_config = LaunchConfiguration('rviz_config')   
     use_sim_time = False
     start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')   
+    namespace = LaunchConfiguration('namespace')  
 
     rviz_config_dir = os.path.join(get_package_share_directory('spark_slam_transfer'),
                                    'rviz', 'spark_slam.rviz')
@@ -93,7 +94,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(spark_yolov8_dir, 'launch', 'spark_yolo_object.launch.py')),
             launch_arguments={'camera_type_tel' : camera_type_tel,
-                              'lidar_type_tel': lidar_type_tel,}.items()),
+                              'lidar_type_tel': lidar_type_tel,
+                              'namespace': namespace,}.items()),
             
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(swiftpro_driver_dir, 'launch',
@@ -111,6 +113,7 @@ def generate_launch_description():
     spark_test_node = launch_ros.actions.Node(
         package='spark_test',
         executable='spark_aging_test',  
+        namespace=namespace,
         output='screen',
         )
     gmapping_slam_node = launch_ros.actions.Node(

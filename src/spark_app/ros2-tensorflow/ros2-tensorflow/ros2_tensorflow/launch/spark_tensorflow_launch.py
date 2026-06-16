@@ -26,6 +26,7 @@ import launch_ros.actions
 from launch_ros.actions import Node
 from launch.conditions import IfCondition
 from launch.actions import TimerAction
+from spark_bringup.common_launch_args import declare_common_arguments
 # os.system("export PYTHONPATH=$PYTHONPATH:/home/spark/models/research && cd /home/spark/models/research && protoc object_detection/protos/*.proto --python_out=.")
 def generate_launch_description():
     # Get the launch directory
@@ -44,6 +45,7 @@ def generate_launch_description():
     dp_rgist = LaunchConfiguration('dp_rgist')   
     start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')   
     start_slam_rviz = LaunchConfiguration('start_slam_rviz')   
+    namespace = LaunchConfiguration('namespace')  
 
     rviz_config_dir = os.path.join(get_package_share_directory('ros2_tensorflow'),
                                    'rviz', 'spark_tensorflow.rviz')
@@ -108,6 +110,10 @@ def generate_launch_description():
         default_value='true',
         choices=['true', 'false'],
         description='Whether to start_slam_rviz')       
+    declare_namespace = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='The namespace for multi-robot')
     # Specify the group
     driver_bringup_group = GroupAction([
         IncludeLaunchDescription(
@@ -122,7 +128,8 @@ def generate_launch_description():
                               'camera_type_tel' : camera_type_tel,
                               'lidar_type_tel': lidar_type_tel,
 							  'dp_rgist': dp_rgist,
-                              'start_bringup_rviz' : start_bringup_rviz,}.items()),
+                              'start_bringup_rviz' : start_bringup_rviz,
+                              'namespace': namespace,}.items()),
     ])
 
     spark_teleop_node = launch_ros.actions.Node(
@@ -135,6 +142,7 @@ def generate_launch_description():
     spark_tf_node = launch_ros.actions.Node(
         package='tf_detection_py',
         executable='server',  
+        namespace=namespace,
         output='screen',
         emulate_tty=True,
         remappings=remappings,
@@ -167,6 +175,7 @@ def generate_launch_description():
     ld.add_action(declare_dp_rgist)
     ld.add_action(declare_start_bringup_rviz)
     ld.add_action(declare_start_slam_rviz)
+    ld.add_action(declare_namespace)
 
     ld.add_action(driver_bringup_group)
     ld.add_action(spark_teleop_node)

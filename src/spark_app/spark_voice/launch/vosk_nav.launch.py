@@ -46,6 +46,7 @@ def generate_launch_description():
     dp_rgist = LaunchConfiguration('dp_rgist')   
     start_bringup_rviz = LaunchConfiguration('start_bringup_rviz')
     language = LaunchConfiguration('language')    
+    namespace = LaunchConfiguration('namespace')  
 
 
     declare_serial_port = DeclareLaunchArgument(
@@ -97,7 +98,8 @@ def generate_launch_description():
                               'camera_type_tel' : camera_type_tel,
                               'lidar_type_tel': lidar_type_tel,
 							                'dp_rgist': dp_rgist,
-                              'start_bringup_rviz' : start_bringup_rviz,}.items()),
+                              'start_bringup_rviz' : start_bringup_rviz,
+                              'namespace': namespace,}.items()),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(os.path.join(voskros_dir, 'launch',
                                                        'spark_voskros.launch.py')),
@@ -108,6 +110,7 @@ def generate_launch_description():
     voice_nav_node = Node(
         package='spark_voice',
         executable='voice_nav',  
+        namespace=namespace,
         output='screen',
         emulate_tty=True,
     )
