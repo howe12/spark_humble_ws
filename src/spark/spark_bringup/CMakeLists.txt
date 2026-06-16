@@ -34,5 +34,10 @@ install(
     DIRECTORY
     launch rviz DESTINATION share/${PROJECT_NAME}/
 )
+# Install common_launch_args as importable Python module
+install(
+    FILES launch/__init__.py launch/common_launch_args.py
+    DESTINATION lib/python3.10/site-packages/spark_bringup/
+)
 
 ament_package()

@@ -35,7 +35,7 @@ source /opt/ros/humble/setup.bash 2>/dev/null
 BUILD_LOG=$(unset VIRTUAL_ENV; export PATH=/usr/bin:/usr/local/bin:$PATH; colcon build \
     --symlink-install \
     --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3 \
-    --packages-select spark_bringup spark_base spark_description spark_teleop spark_follower spark_navigation2 spark_rtab_map spark_slam_transfer spark_yolov8 camera_driver_transfer lidar_driver_transfer realsense2_description spark_common_interfaces ydlidar_ros2_driver spark_cartographer 2>&1)
+    --packages-select spark_bringup spark_base spark_description spark_teleop spark_follower spark_navigation2 spark_rtab_map spark_slam_transfer spark_yolov8 camera_driver_transfer lidar_driver_transfer realsense2_description spark_common_interfaces ydlidar_ros2_driver spark_cartographer openslam_gmapping slam_gmapping 2>&1)
 BUILD_RC=$?
 
 if echo "$BUILD_LOG" | grep -q "Summary:.*packages finished"; then
