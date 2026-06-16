@@ -27,6 +27,7 @@ import launch_ros.actions
 from launch_ros.actions import Node
 from launch.conditions import IfCondition,UnlessCondition
 from launch.actions import TimerAction
+from spark_bringup.common_launch_args import declare_common_arguments
 
 def generate_launch_description():
     # -------------------- 1.功能包路径定义 --------------------
@@ -37,34 +38,7 @@ def generate_launch_description():
 
 
     # -------------------- 2.参数声明 --------------------
-    declared_arguments = []
-    declared_arguments.append(DeclareLaunchArgument(
-        'camera_type_tel', 
-        default_value='d435',
-        description='camera type'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'lidar_type_tel', 
-        default_value='ydlidar_g6',
-        description='lidar type'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'enable_arm_tel', 
-        default_value='false',
-        choices=['true', 'false'],
-        description='Whether to run arm'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'arm_type_tel', 
-        default_value='uarm',
-        choices=['uarm', 'sagittarius_arm'],
-        description='arm name'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'namespace', 
-        default_value='',
-        description='The name of namespace'
-    )) 
+    declared_arguments = declare_common_arguments()
     declared_arguments.append(DeclareLaunchArgument(
         'start_bringup_rviz', 
         default_value='false',

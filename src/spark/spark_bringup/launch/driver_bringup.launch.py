@@ -22,6 +22,7 @@ from launch.conditions import IfCondition, LaunchConfigurationEquals
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node, PushRosNamespace
+from spark_bringup.common_launch_args import declare_common_arguments
 
 def generate_launch_description():
     # -------------------- 1.功能包路径定义 --------------------
@@ -33,25 +34,13 @@ def generate_launch_description():
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
     # -------------------- 2.参数声明 --------------------
-    declared_arguments = []
+    declared_arguments = declare_common_arguments()
 
     # 添加所有参数声明到列表
     declared_arguments.append(DeclareLaunchArgument(
         'serial_port', 
         default_value='/dev/sparkBase',
         description='serial port name:/dev/sparkBase or /dev/ttyUSBx'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'enable_arm_tel', 
-        default_value='false',
-        choices=['true', 'false'],
-        description='Whether to run arm'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'arm_type_tel', 
-        default_value='uarm',
-        choices=['uarm', 'sagittarius_arm'],
-        description='arm name'
     ))
     declared_arguments.append(DeclareLaunchArgument(
         'start_base', 
@@ -72,18 +61,6 @@ def generate_launch_description():
         description='Whether to run lidar'
     ))
     declared_arguments.append(DeclareLaunchArgument(
-        'camera_type_tel', 
-        default_value='d435',
-        choices=['d435', 'astra_pro'],
-        description='camera type'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
-        'lidar_type_tel', 
-        default_value='ydlidar_g6',
-        choices=['ydlidar_g2', 'ydlidar_g6'],
-        description='lidar type'
-    ))
-    declared_arguments.append(DeclareLaunchArgument(
         'dp_rgist', 
         default_value='true',
         choices=['true', 'false'],
@@ -95,11 +72,6 @@ def generate_launch_description():
         choices=['true', 'false'],
         description='Whether to start_bringup_rviz'
     ))   
-    declared_arguments.append(DeclareLaunchArgument(
-        'namespace',
-        default_value='',
-        description='The name of namespace'
-    ))
     declared_arguments.append(DeclareLaunchArgument(
         'frame_prefix',
         default_value='',

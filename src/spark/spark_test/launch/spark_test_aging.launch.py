@@ -25,6 +25,7 @@ from launch.substitutions import LaunchConfiguration
 import launch_ros.actions
 from launch_ros.actions import Node
 from launch.conditions import IfCondition,UnlessCondition
+from spark_bringup.common_launch_args import declare_common_arguments
 
 def generate_launch_description():
     # Get the launch directory
@@ -54,15 +55,7 @@ def generate_launch_description():
         'serial_port', 
         default_value='/dev/sparkBase',
         description='serial port name:/dev/ttyACM0 or /dev/sparkBase')
-    declare_enable_arm_tel = DeclareLaunchArgument(
-        'enable_arm_tel', 
-        default_value='false',
-        choices=['true', 'false'],
-        description='Whether to run arm')
-    declare_arm_type_tel = DeclareLaunchArgument(
-        'arm_type_tel',
-        default_value='uarm',
-        description='arm name')
+    declared_arguments = declare_common_arguments()
     declare_start_base = DeclareLaunchArgument(
         'start_base', 
         default_value='true',
@@ -78,16 +71,6 @@ def generate_launch_description():
         default_value='true',
         choices=['true', 'false'],
         description='Whether to run lidar')
-    declare_camera_type_tel = DeclareLaunchArgument(
-        'camera_type_tel', 
-        default_value='d435',
-        #choices=['d435', 'astra_pro'],
-        description='camera type')
-    declare_lidar_type_tel = DeclareLaunchArgument(
-        'lidar_type_tel', 
-        default_value='ydlidar_g6',
-        #choices=['ydlidar_g2', 'ydlidar_g6'],
-        description='lidar type')
     declare_dp_rgist = DeclareLaunchArgument(
         'dp_rgist', 
         default_value='true',
@@ -149,14 +132,12 @@ def generate_launch_description():
         )
     # Create the launch description and populate
     ld = LaunchDescription()
+    for arg in declared_arguments:
+        ld.add_action(arg)
     ld.add_action(declare_serial_port)
-    ld.add_action(declare_enable_arm_tel)
-    ld.add_action(declare_arm_type_tel)
     ld.add_action(declare_start_base)
     ld.add_action(declare_start_lidar)
     ld.add_action(declare_start_camera)
-    ld.add_action(declare_camera_type_tel)
-    ld.add_action(declare_lidar_type_tel)
     ld.add_action(declare_dp_rgist)
     ld.add_action(declare_rviz_config)
     ld.add_action(declare_start_bringup_rviz)
