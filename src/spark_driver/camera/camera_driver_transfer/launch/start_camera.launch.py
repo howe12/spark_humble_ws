@@ -101,7 +101,6 @@ def generate_launch_description():
     # -------------------- 4.机器人选择对应相机驱动 --------------------
     camera_type_launch = (camera_driver_transfer_dir, '/launch/', camera_type_tel, '.launch.py')
     camera_launch = GroupAction([
-        PushRosNamespace(namespace),
         IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(camera_type_launch),
                 launch_arguments={'namespace': namespace,}.items())

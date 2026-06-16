@@ -124,7 +124,6 @@ def generate_launch_description():
 
     # -------------------- 4.相机驱动程序 --------------------
     d435_camera_launch = GroupAction([
-        PushRosNamespace(camera_namespace),
         IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(os.path.join(realsense2_camera_dir, 'launch',
                                                            'rs_launch.py')),

@@ -101,7 +101,6 @@ def generate_launch_description():
     # -------------------- 4.机器人选择对应雷达驱动 --------------------
     lidar_type_launch = (lidar_driver_transfer_dir, '/launch/', lidar_type_tel, '.launch.py')
     lidar_launch = GroupAction([
-        PushRosNamespace(namespace),
         IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(lidar_type_launch),
                 launch_arguments={'namespace': namespace,}.items())
