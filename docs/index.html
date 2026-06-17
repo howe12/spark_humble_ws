@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NXROBO Spark — 开发者文档</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #08090a;
+      --bg-panel: #0f1011;
+      --bg-surface: #191a1b;
+      --bg-elevated: #23252a;
+      --text-primary: #f7f8f8;
+      --text-secondary: #d0d6e0;
+      --text-tertiary: #8a8f98;
+      --text-muted: #62666d;
+      --accent: #5e6ad2;
+      --accent-bright: #7170ff;
+      --accent-hover: #828fff;
+      --border-subtle: rgba(255,255,255,0.05);
+      --border-std: rgba(255,255,255,0.08);
+      --border-solid: #23252a;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8,9,10,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; height: 56px;
+      gap: 32px;
+    }
+    .nav-logo {
+      font-size: 18px; font-weight: 600; color: var(--text-primary);
+      letter-spacing: -0.3px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .nav-logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-bright); }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-links a {
+      color: var(--text-tertiary); text-decoration: none;
+      font-size: 14px; font-weight: 500; padding: 6px 12px;
+      border-radius: 6px; transition: all 0.15s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+    .nav-gh {
+      margin-left: auto; color: var(--text-muted); text-decoration: none;
+      font-size: 14px; transition: color 0.15s;
+    }
+    .nav-gh:hover { color: var(--text-secondary); }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 1200px; margin: 0 auto; padding: 80px 24px 64px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 48px; font-weight: 600; color: var(--text-primary);
+      letter-spacing: -1.2px; line-height: 1.1; margin-bottom: 16px;
+    }
+    .hero .accent { color: var(--accent-bright); }
+    .hero p {
+      font-size: 18px; color: var(--text-tertiary); max-width: 640px;
+      margin: 0 auto 32px; line-height: 1.7;
+    }
+    .hero-badges { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 13px; font-weight: 500;
+      border: 1px solid var(--border-std);
+      color: var(--text-tertiary); background: rgba(255,255,255,0.02);
+    }
+    .badge .b-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .badge .b-dot.g { background: var(--green); }
+    .badge .b-dot.a { background: var(--amber); }
+
+    /* ── TABS ── */
+    .tabs {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+      display: flex; gap: 0; border-bottom: 1px solid var(--border-subtle);
+    }
+    .tab-btn {
+      padding: 12px 20px; font-size: 14px; font-weight: 500;
+      color: var(--text-tertiary); background: none; border: none;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.15s; margin-bottom: -1px;
+      font-family: inherit;
+    }
+    .tab-btn:hover { color: var(--text-secondary); }
+    .tab-btn.active { color: var(--text-primary); border-bottom-color: var(--accent-bright); }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 1200px; margin: 0 auto; padding: 48px 24px 80px;
+    }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section h2 {
+      font-size: 28px; font-weight: 600; color: var(--text-primary);
+      letter-spacing: -0.5px; margin: 48px 0 16px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);
+    }
+    .section h2:first-child { margin-top: 0; }
+    .section h3 {
+      font-size: 18px; font-weight: 600; color: var(--text-primary);
+      margin: 32px 0 12px;
+    }
+    .section h4 {
+      font-size: 15px; font-weight: 600; color: var(--text-secondary);
+      margin: 24px 0 8px; text-transform: uppercase;
+      letter-spacing: 0.5px; font-size: 12px; color: var(--text-muted);
+    }
+    .section p { margin-bottom: 12px; color: var(--text-secondary); font-size: 15px; }
+    .section ul, .section ol { margin: 8px 0 16px 20px; color: var(--text-secondary); font-size: 15px; }
+    .section li { margin-bottom: 6px; }
+
+    /* ── CARDS ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 16px 0 32px; }
+    .card {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border-std);
+      border-radius: 8px; padding: 20px;
+    }
+    .card h4 { margin: 0 0 8px; text-transform: none; font-size: 16px; color: var(--text-primary); letter-spacing: 0; }
+    .card p { font-size: 14px; color: var(--text-tertiary); margin: 0; }
+
+    /* ── CODE ── */
+    pre {
+      background: var(--bg-surface); border: 1px solid var(--border-std);
+      border-radius: 6px; padding: 16px; overflow-x: auto;
+      margin: 12px 0 20px;
+    }
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 13px; color: var(--text-primary); line-height: 1.6;
+    }
+    :not(pre) > code {
+      background: var(--bg-surface); padding: 2px 6px;
+      border-radius: 4px; font-size: 13px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ── TABLE ── */
+    .tbl-wrap { overflow-x: auto; margin: 16px 0 24px; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 14px;
+    }
+    th {
+      text-align: left; padding: 10px 14px; font-weight: 600;
+      color: var(--text-primary); border-bottom: 2px solid var(--border-std);
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary); vertical-align: top;
+    }
+    tr:hover td { background: rgba(255,255,255,0.01); }
+
+    /* ── DIAGRAM ── */
+    .arch-diagram {
+      background: var(--bg-surface); border: 1px solid var(--border-std);
+      border-radius: 8px; padding: 24px; margin: 16px 0 24px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      line-height: 1.5; color: var(--text-tertiary);
+      overflow-x: auto; white-space: pre;
+    }
+    .arch-diagram .hl { color: var(--accent-bright); }
+    .arch-diagram .g { color: var(--green); }
+
+    /* ── FLOW ROW ── */
+    .flow-row {
+      display: flex; align-items: center; gap: 12px;
+      margin: 12px 0; flex-wrap: wrap;
+    }
+    .flow-box {
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+      border: 1px solid var(--border-std);
+    }
+    .flow-box.src { background: rgba(94,106,210,0.1); border-color: rgba(94,106,210,0.2); color: var(--accent-bright); }
+    .flow-box.pub { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2); color: var(--green); }
+    .flow-box.sub { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); color: var(--amber); }
+    .flow-arrow { color: var(--text-muted); font-weight: 600; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 32px; letter-spacing: -0.8px; }
+      .hero p { font-size: 15px; }
+      .nav-inner { gap: 16px; }
+      .nav-links a { font-size: 13px; padding: 4px 8px; }
+      .card-grid { grid-template-columns: 1fr; }
+      .tabs { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ──── NAV ──── -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><span class="dot"></span> NXROBO Spark</div>
+    <div class="nav-links">
+      <a href="#arch" class="active" onclick="switchTab('arch')">架构</a>
+      <a href="#topics" onclick="switchTab('topics')">Topic 参考</a>
+      <a href="#guide" onclick="switchTab('guide')">开发指南</a>
+    </div>
+    <a class="nav-gh" href="https://github.com/NXROBO/spark_humble" target="_blank">GitHub →</a>
+  </div>
+</nav>
+
+<!-- ──── HERO ──── -->
+<section class="hero">
+  <h1>让 <span class="accent">SPARK</span> 机器人开发更简单</h1>
+  <p>NXROBO Spark 机器人 ROS2 Humble 全栈工程文档 —— 架构设计、Topic 清册、开发指南，一站式查阅。</p>
+  <div class="hero-badges">
+    <span class="badge"><span class="b-dot g"></span> ROS2 Humble</span>
+    <span class="badge"><span class="b-dot g"></span> 37 Packages</span>
+    <span class="badge"><span class="b-dot a"></span> Ubuntu 22.04</span>
+    <span class="badge"><span class="b-dot g"></span> D435 + G6</span>
+    <span class="badge">机械臂 + 语音</span>
+  </div>
+</section>
+
+<!-- ──── TABS ──── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('arch')">🏗️ 系统架构</button>
+  <button class="tab-btn" onclick="switchTab('topics')">📡 Topic 参考</button>
+  <button class="tab-btn" onclick="switchTab('guide')">📖 开发指南</button>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- ARCHITECTURE                            -->
+<!-- ══════════════════════════════════════════ -->
+<div class="content">
+<div class="section active" id="arch">
+
+<h2>三层架构</h2>
+<div class="arch-diagram">
+┌─────────────────────────────────────────────────────────┐
+│                    <span class="hl">onekey.sh</span>                             │
+│               (用户交互入口，13 个菜单)                     │
+├─────────────────────────────────────────────────────────┤
+│                  <span class="g">应用层 (spark_app/)</span>                    │
+│  follower │ carry │ navigation2 │ rtabmap │ slam       │
+│  yolov8 │ voice │ face_recognition │ torch │ tf        │
+├─────────────────────────────────────────────────────────┤
+│                   <span class="hl">核心层 (spark/)</span>                      │
+│  bringup │ description │ teleop │ test │ smach         │
+│  common_interfaces │ serial-ros2 │ velocity_smoother   │
+├─────────────────────────────────────────────────────────┤
+│                 <span class="g">驱动层 (spark_driver/)</span>                 │
+│  base (C++) │ camera (realsense) │ lidar (ydlidar)     │
+│  arm (uarm/swiftpro)                                    │
+└─────────────────────────────────────────────────────────┘
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>📱 应用层</h4>
+    <p>面向用户的功能模块：跟随、抓取、导航、SLAM、YOLO、语音。每个 demo 通过 onekey.sh 调用。</p>
+  </div>
+  <div class="card">
+    <h4>⚙️ 核心层</h4>
+    <p>统一底座 driver_bringup、URDF 模型、公共参数定义、消息接口。所有应用 launch 的必经之路。</p>
+  </div>
+  <div class="card">
+    <h4>🔌 驱动层</h4>
+    <p>硬件抽象：底盘串口驱动 (C++)、相机自动检测、雷达自动检测、机械臂控制。</p>
+  </div>
+</div>
+
+<h2>启动调用链</h2>
+<div class="arch-diagram">
+<span class="hl">onekey.sh</span> (设定 CAMERATYPE / LIDARTYPE / ARMTYPE)
+  └─ <span class="g">应用 launch</span> (如 teleop.launch.py)
+       └─ <span class="hl">driver_bringup.launch.py</span>  ← 统一底座
+            ├─ spark_description.launch.py  (URDF 模型)
+            ├─ spark_base.launch.py         (底盘驱动)
+            ├─ start_camera.launch.py       (相机自动检测)
+            │    └─ d435.launch.py / astra*.launch.py
+            └─ start_lidar.launch.py        (雷达自动检测)
+                 └─ ydlidar_g6.launch.py / ydlidar_g2.launch.py
+</div>
+
+<ul>
+  <li>所有应用 launch 都通过 <code>driver_bringup</code> 启动驱动层</li>
+  <li><code>driver_bringup</code> 4 个子 launch <strong>并行启动</strong></li>
+  <li>相机/雷达类型由 <code>lsusb</code> + <code>/opt/lidar.txt</code> 自动检测</li>
+</ul>
+
+<h2>数据流</h2>
+<div class="arch-diagram">
+         ┌──────────┐
+         │   <span class="hl">D435</span>   │──► /camera/color/image_raw ──► yolov8 / follower / tf
+         │  相机    │──► /camera/aligned_depth_to_color/image_raw ──► rtabmap
+         └──────────┘
+
+         ┌──────────┐
+         │   <span class="hl">G6</span>     │──► /scan ──► gmapping / cartographer / nav2 / rtabmap
+         │  雷达    │
+         └──────────┘
+
+         ┌──────────┐
+         │  <span class="hl">底盘</span>    │──► /odom ──► nav2 / rtabmap / cartographer
+         │  base    │──► /imu_data
+         └──────────┘     ▲
+                     /cmd_vel  ←── teleop / follower / nav2
+</div>
+
+<h2>关键文件</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>文件</th><th>作用</th></tr>
+  <tr><td><code>src/onekey.sh</code></td><td>用户交互入口，12 个功能菜单 + 隐藏菜单</td></tr>
+  <tr><td><code>spark_bringup/launch/driver_bringup.launch.py</code></td><td>统一底座，所有应用 launch 的驱动入口</td></tr>
+  <tr><td><code>spark_bringup/launch/common_launch_args.py</code></td><td>5 个公共参数定义（Wave 2 提取）</td></tr>
+  <tr><td><code>spark_base/src/spark_base_driver.cpp</code></td><td>底盘 C++ 驱动，odom / IMU / 传感器</td></tr>
+  <tr><td><code>camera_driver_transfer/launch/start_camera.launch.py</code></td><td>相机自动检测（lsusb）</td></tr>
+  <tr><td><code>lidar_driver_transfer/launch/start_lidar.launch.py</code></td><td>雷达自动检测（/opt/lidar.txt + lsusb）</td></tr>
+</table>
+</div>
+
+<h2>设计决策</h2>
+
+<h3>common_launch_args.py</h3>
+<p>15 个应用 launch 文件共享 5 个参数声明，避免逐一修改：<code>camera_type_tel</code>、<code>lidar_type_tel</code>、<code>enable_arm_tel</code>、<code>arm_type_tel</code>、<code>namespace</code>。</p>
+
+<h3>PushRosNamespace 使用规范</h3>
+<ul>
+  <li>只在 <code>driver_bringup.launch.py</code> 中使用 PushRosNamespace 包裹子 launch</li>
+  <li>子层（start_camera、d435、start_lidar、ydlidar_g6）不再重复包裹</li>
+  <li><code>nav2_bringup.launch.py</code> 独立使用</li>
+</ul>
+
+<h2>已完成优化</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>Wave</th><th>内容</th><th>影响</th></tr>
+  <tr><td>1</td><td>参数断链修复</td><td>2 文件</td></tr>
+  <tr><td>2</td><td>公共参数地基</td><td>16 文件，-331 行</td></tr>
+  <tr><td>3</td><td>死代码清理 + PushRosNamespace</td><td>60+ 文件，-4721 行</td></tr>
+  <tr><td>5</td><td>namespace 补全 + 叠加修复</td><td>9 文件，+27/-4 行</td></tr>
+</table>
+</div>
+
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- TOPICS                                  -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section" id="topics">
+
+<h2>底盘 (spark_base)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Pub</td><td><code>/odom</code></td><td><code>nav_msgs/Odometry</code></td><td>里程计</td></tr>
+  <tr><td>Pub</td><td><code>/imu_data</code></td><td><code>sensor_msgs/Imu</code></td><td>IMU 数据</td></tr>
+  <tr><td>Pub</td><td><code>/wheel_states</code></td><td><code>sensor_msgs/JointState</code></td><td>轮子关节状态</td></tr>
+  <tr><td>Pub</td><td><code>/spark_base/command/velocity</code></td><td><code>geometry_msgs/Twist</code></td><td>速度反馈</td></tr>
+  <tr><td>Pub</td><td><code>/spark_base/gyro</code></td><td><code>spark_base/GyroMessage</code></td><td>陀螺仪原始数据</td></tr>
+  <tr><td>Pub</td><td><code>/spark_base/sensor</code></td><td><code>spark_base/SparkBaseSensor</code></td><td>红外/超声传感器</td></tr>
+  <tr><td>Sub</td><td><code>/cmd_vel</code></td><td><code>geometry_msgs/Twist</code></td><td>速度控制指令</td></tr>
+  <tr><td>Sub</td><td><code>/dock_control</code></td><td><code>std_msgs/String</code></td><td>充电桩控制</td></tr>
+</table>
+</div>
+
+<h2>相机 (realsense D435)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Pub</td><td><code>/camera/color/image_raw</code></td><td><code>sensor_msgs/Image</code></td><td>RGB 彩色图像 640×480@30fps</td></tr>
+  <tr><td>Pub</td><td><code>/camera/color/camera_info</code></td><td><code>sensor_msgs/CameraInfo</code></td><td>彩色相机参数</td></tr>
+  <tr><td>Pub</td><td><code>/camera/aligned_depth_to_color/image_raw</code></td><td><code>sensor_msgs/Image</code></td><td>对齐深度图 848×480</td></tr>
+  <tr><td>Pub</td><td><code>/camera/depth/camera_info</code></td><td><code>sensor_msgs/CameraInfo</code></td><td>深度相机参数</td></tr>
+</table>
+</div>
+
+<h2>雷达 (ydlidar G6)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Pub</td><td><code>/scan</code></td><td><code>sensor_msgs/LaserScan</code></td><td>激光扫描 12Hz 360°</td></tr>
+</table>
+</div>
+
+<h2>跟随 (spark_follower)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Pub</td><td><code>/cmd_vel</code></td><td><code>geometry_msgs/Twist</code></td><td>跟随控制速度</td></tr>
+  <tr><td>Sub</td><td><code>/camera/depth/color/points</code></td><td><code>sensor_msgs/PointCloud2</code></td><td>深度点云（行人检测）</td></tr>
+  <tr><td>Sub</td><td><code>/scan</code></td><td><code>sensor_msgs/LaserScan</code></td><td>激光扫描（避障）</td></tr>
+</table>
+</div>
+
+<h2>YOLO 视觉</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Sub</td><td><code>/camera/color/image_raw</code></td><td><code>sensor_msgs/Image</code></td><td>输入图像</td></tr>
+  <tr><td>Pub</td><td><code>/yolo/debug_image</code></td><td><code>sensor_msgs/Image</code></td><td>标注后的调试图像</td></tr>
+  <tr><td>Pub</td><td><code>/yolo/objects</code></td><td><code>VisionInference</code></td><td>检测结果</td></tr>
+</table>
+</div>
+
+<h2>3D 建图 (rtabmap)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>方向</th><th>名称</th><th>类型</th><th>说明</th></tr>
+  <tr><td>Sub</td><td><code>/rgbd_image</code></td><td><code>rtabmap_msgs/RGBDImage</code></td><td>RGB-D 同步数据</td></tr>
+  <tr><td>Sub</td><td><code>/odom</code></td><td><code>nav_msgs/Odometry</code></td><td>里程计</td></tr>
+  <tr><td>Sub</td><td><code>/scan</code></td><td><code>sensor_msgs/LaserScan</code></td><td>激光扫描</td></tr>
+  <tr><td>Pub</td><td><code>/rtabmap/mapData</code></td><td><code>rtabmap_msgs/MapData</code></td><td>3D 地图数据</td></tr>
+</table>
+</div>
+
+<h2>自定义消息 (spark_common_interfaces)</h2>
+<div class="tbl-wrap">
+<table>
+  <tr><th>类型</th><th>字段</th></tr>
+  <tr><td><code>VisionInference</code></td><td><code>header</code> + <code>InferenceResult[]</code>（视觉推理结果聚合）</td></tr>
+  <tr><td><code>InferenceResult</code></td><td><code>class_name</code> + <code>score</code> + <code>bbox</code>（单个检测目标）</td></tr>
+  <tr><td><code>Position</code></td><td><code>x, y, z</code>（3D 位置，机械臂控制）</td></tr>
+  <tr><td><code>Status</code></td><td><code>uint8 status</code>（状态码）</td></tr>
+</table>
+</div>
+
+<h2>核心数据流</h2>
+<div class="arch-diagram">
+<span class="g">D435</span> ──► /camera/color/image_raw ──► <span class="hl">yolov8</span> ──► /yolo/objects
+     ──► /camera/aligned_depth_to_color/image_raw ──► rgbd_sync ──► /rgbd_image ──► <span class="hl">rtabmap</span>
+
+<span class="g">G6</span>  ──► /scan ──► <span class="hl">gmapping / cartographer / nav2 / follower</span>
+
+<span class="g">底盘</span> ──► /odom ──► <span class="hl">nav2 / rtabmap / cartographer</span>
+     ◄── /cmd_vel ── <span class="hl">teleop / follower / nav2 / voice</span>
+</div>
+
+<h2>调试命令</h2>
+<pre><code># 查看所有活跃 topic
+ros2 topic list
+
+# 查看 topic 带宽
+ros2 topic bw /camera/color/image_raw
+
+# 查看 topic 发布频率
+ros2 topic hz /scan
+
+# 查看 topic 消息内容
+ros2 topic echo /odom --once</code></pre>
+
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- DEVELOPER GUIDE                         -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section" id="guide">
+
+<h2>项目结构速览</h2>
+<pre><code>spark_humble/
+├── src/
+│   ├── onekey.sh              ← 用户交互入口
+│   ├── test_launch.sh         ← 自动测试脚本
+│   ├── spark/                 ← 核心层
+│   │   ├── spark_bringup/     ← 统一底座
+│   │   ├── spark_description/ ← URDF 机器人模型
+│   │   ├── spark_teleop/      ← 键盘遥控
+│   │   └── spark_common_interfaces/ ← 自定义消息
+│   ├── spark_app/             ← 应用层
+│   │   ├── spark_follower/    ← 行人跟随
+│   │   ├── spark_carry/       ← 机械臂抓取
+│   │   ├── spark_navigation2/ ← 2D 激光导航
+│   │   ├── spark_rtab_map/    ← 3D 视觉导航
+│   │   ├── spark_slam/        ← SLAM
+│   │   ├── spark_yolov8/      ← YOLO 视觉检测
+│   │   └── spark_voice/       ← 语音控制
+│   └── spark_driver/          ← 驱动层
+│       ├── base/              ← 底盘串口驱动 (C++)
+│       ├── camera/            ← 相机驱动 (realsense)
+│       ├── lidar/             ← 雷达驱动 (ydlidar)
+│       └── arm/               ← 机械臂驱动
+├── ARCHITECTURE.md            ← 架构文档
+├── TOPICS.md                  ← Topic 参考
+└── DEVELOPER_GUIDE.md         ← 本文档</code></pre>
+
+<h2>新增一个 Demo</h2>
+
+<h3>Step 1: 创建应用包</h3>
+<pre><code>cd src/spark_app
+ros2 pkg create --build-type ament_python spark_my_demo \
+  --dependencies rclpy std_msgs sensor_msgs geometry_msgs</code></pre>
+
+<h3>Step 2: 写应用 launch 文件</h3>
+<p>创建 <code>spark_my_demo/launch/my_demo.launch.py</code>：</p>
+<pre><code>from spark_bringup.common_launch_args import declare_common_arguments
+
+def generate_launch_description():
+    # 1. 声明公共参数（必须！）
+    declared_arguments = declare_common_arguments()
+
+    # 2. 引用参数
+    namespace = LaunchConfiguration('namespace')
+
+    # 3. 启动驱动（必须！）
+    driver_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(spark_bringup_dir, 'launch', 'driver_bringup.launch.py')),
+        launch_arguments={
+            'camera_type_tel': camera_type_tel,
+            'lidar_type_tel': lidar_type_tel,
+            'namespace': namespace,      # ← 必须传递
+        }.items())
+
+    # 4. 启动自己的节点
+    my_node = Node(
+        package='spark_my_demo',
+        executable='my_node',
+        namespace=namespace,             # ← 必须加上
+        output='screen')
+
+    return LaunchDescription(declared_arguments + [driver_launch, my_node])</code></pre>
+
+<h3>Step 3: 注册到 onekey.sh</h3>
+<pre><code># 在菜单中添加（约 657 行）
+echo "  ${Green_font_prefix} 11.${Font_color_suffix} 我的新 Demo"
+
+# 在 case 分支添加（约 700 行）
+11) my_demo_function ;;
+
+# 添加函数
+my_demo_function(){
+    PROJECTPATH=$(cd `dirname $0`; pwd)
+    source ${PROJECTPATH}/install/setup.bash
+    ros2 launch spark_my_demo my_demo.launch.py \
+        camera_type_tel:=${CAMERATYPE} \
+        lidar_type_tel:=${LIDARTYPE}
+}</code></pre>
+
+<h2>修改 Launch 文件注意事项</h2>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>✅ 必须 import</h4>
+    <p>所有应用 launch 必须 <code>from spark_bringup.common_launch_args import declare_common_arguments</code></p>
+  </div>
+  <div class="card">
+    <h4>✅ 必须传 namespace</h4>
+    <p>给 driver_bringup 和自己 Node 都要传 <code>namespace=namespace</code></p>
+  </div>
+  <div class="card">
+    <h4>🚫 禁止重复 PushRosNamespace</h4>
+    <p>子层 launch（start_camera、d435、start_lidar、ydlidar_g6）不要再用 PushRosNamespace</p>
+  </div>
+  <div class="card">
+    <h4>🚫 修改后必须做的事</h4>
+    <p>全量编译 37/37 → git push → 真机测试（涉底盘运动先确认）</p>
+  </div>
+</div>
+
+<h2>添加新传感器驱动</h2>
+
+<h3>相机</h3>
+<ol>
+  <li>在 <code>camera_driver_transfer/launch/</code> 下创建 <code>my_camera.launch.py</code></li>
+  <li>在 <code>start_camera.launch.py</code> 的 <code>camera_type_dict</code> 中添加 USB ID 映射</li>
+  <li>在 <code>common_launch_args.py</code> 的 choices 中添加新类型</li>
+</ol>
+
+<h3>雷达</h3>
+<ol>
+  <li>在 <code>lidar_driver_transfer/launch/</code> 下创建 <code>my_lidar.launch.py</code></li>
+  <li>在 <code>start_lidar.launch.py</code> 中添加 USB ID 映射</li>
+  <li>在 <code>common_launch_args.py</code> 的 choices 中添加新类型</li>
+</ol>
+
+<h2>编译与测试</h2>
+<pre><code># 编译（必须 37/37，不允许 --packages-skip）
+source /opt/ros/humble/setup.bash
+colcon build --symlink-install
+
+# 快速静态检查
+bash src/test_launch.sh
+
+# 真机单 demo 测试（不涉及底盘运动）
+source install/setup.bash
+timeout 20 ros2 launch &lt;package&gt; &lt;launch_file&gt; &lt;args...&gt; 2>&1
+
+# 测试前必须
+git pull
+lsusb | grep -iE "realsense|ch340|silabs"</code></pre>
+
+<h2>Git 工作流</h2>
+<pre><code># 改代码前：同步
+git pull
+
+# 改代码后：编译 → 提交 → 推送
+colcon build --symlink-install
+git add -A
+git commit -m "类型: 简短描述"
+git push</code></pre>
+<p>
+  <code class="badge" style="color:var(--green);border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.05)">feat</code>
+  <code class="badge" style="color:var(--amber);border-color:rgba(245,158,11,0.2);background:rgba(245,158,11,0.05)">fix</code>
+  <code class="badge" style="color:var(--accent-bright);border-color:rgba(113,112,255,0.2);background:rgba(113,112,255,0.05)">refactor</code>
+  <code class="badge" style="color:var(--text-tertiary)">docs</code>
+</p>
+
+</div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  document.querySelector(`.tab-btn[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.querySelector(`.nav-links a[href="#${name}"]`).classList.add('active');
+  window.location.hash = name;
+}
+// Deep link support
+window.addEventListener('hashchange', () => {
+  const name = window.location.hash.slice(1) || 'arch';
+  switchTab(name);
+});
+if (window.location.hash) {
+  switchTab(window.location.hash.slice(1));
+}
+</script>
+
+</body>
+</html>
