@@ -25,6 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'ros2_img_show = vision_basics.ros2_img_show:main',
+            'ros2_bgr2gray = vision_basics.ros2_bgr2gray:main',
+            'ros2_bgr2hsv = vision_basics.ros2_bgr2hsv:main',
         ],
     },
 )
