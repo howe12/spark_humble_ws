@@ -38,6 +38,7 @@ setup(
             'pcd_downsample = vision_basics.pcd_downsample:main',
             'pcd_stats = vision_basics.pcd_stats:main',
             'ros2_grasp_detect = vision_basics.ros2_grasp_detect:main',
+            'ros2_tag_detect = vision_basics.ros2_tag_detect:main',
         ],
     },
 )

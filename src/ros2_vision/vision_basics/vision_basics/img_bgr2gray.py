@@ -4,7 +4,7 @@ import sys
 
 # 读取彩色图像
 scripts_path = sys.path[0]  # 当前脚本的目录
-image = cv2.imread(scripts_path + "/../pictures/test_image.png")
+image = cv2.imread(scripts_path + "/../pictures/lena.png")
 
 # 将彩色图像转换为灰度图像
 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
