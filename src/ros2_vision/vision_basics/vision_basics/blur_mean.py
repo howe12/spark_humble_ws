@@ -1,9 +1,9 @@
 import sys
 import cv2
 
-# 读取带噪声的图像（参考版 lena_salt_pepper_noise.jpeg → 实践版 sp_noise.png）
+# 读取带噪声的图像（参考版 lena_salt_pepper_noise.jpeg → 实践版 lena_sp.png）
 image_path = sys.path[0]
-img = cv2.imread(image_path + "/../pictures/test_pattern_sp.png")
+img = cv2.imread(image_path + "/../pictures/lena_sp.png")
 
 # 调整分辨率
 dsize = (640, 640)

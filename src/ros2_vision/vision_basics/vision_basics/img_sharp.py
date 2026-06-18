@@ -3,7 +3,7 @@ import cv2
 
 # 读取图像（用混合噪声图测试锐化效果）
 image_path = sys.path[0]
-img = cv2.imread(image_path + "/../pictures/test_pattern_mixed.png")
+img = cv2.imread(image_path + "/../pictures/lena_mixed.png")
 
 # 两级模糊：轻度和重度
 blurred_low = cv2.medianBlur(img, 3)     # 轻度模糊

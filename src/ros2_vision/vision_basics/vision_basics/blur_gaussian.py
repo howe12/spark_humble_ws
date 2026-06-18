@@ -3,7 +3,7 @@ import cv2
 
 # 读取带高斯噪声的图像
 image_path = sys.path[0]
-img = cv2.imread(image_path + "/../pictures/test_pattern_gauss.png")
+img = cv2.imread(image_path + "/../pictures/lena_gauss.png")
 
 # 调整分辨率
 dsize = (640, 640)
