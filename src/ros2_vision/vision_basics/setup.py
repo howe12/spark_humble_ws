@@ -41,6 +41,7 @@ setup(
             'ros2_tag_detect = vision_basics.ros2_tag_detect:main',
             'ros2_stereo_compare = vision_basics.ros2_stereo_compare:main',
             'depth_quality = vision_basics.depth_quality:main',
+            'slam_tracker = vision_basics.slam_tracker:main',
         ],
     },
 )
