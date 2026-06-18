@@ -4,7 +4,7 @@ import cv2
 
 # 读取图像
 image_path = sys.path[0]
-img = cv2.imread(image_path + "/../pictures/test_image.png")
+img = cv2.imread(image_path + "/../pictures/lena.png")
 
 cv2.imshow('BGR Image', img)
 
