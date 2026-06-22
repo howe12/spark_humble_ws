@@ -42,6 +42,7 @@ setup(
             'ros2_stereo_compare = vision_basics.ros2_stereo_compare:main',
             'depth_quality = vision_basics.depth_quality:main',
             'slam_tracker = vision_basics.slam_tracker:main',
+            'ros2_yolo = vision_basics.ros2_yolo:main',
         ],
     },
 )
