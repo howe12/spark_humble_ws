@@ -44,6 +44,7 @@ setup(
             'slam_tracker = vision_basics.slam_tracker:main',
             'ros2_yolo = vision_basics.ros2_yolo:main',
             'ros2_yolo_seg = vision_basics.ros2_yolo_seg:main',
+            'ros2_yolo_pose = vision_basics.ros2_yolo_pose:main',
         ],
     },
 )
