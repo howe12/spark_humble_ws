@@ -26,7 +26,7 @@ class ImgBlur(Node):
         # 显示原图
         cv2.imshow('original', color_image)
         # 高斯滤波（5x5，sigma 自动）
-        blurred = cv2.GaussianBlur(color_image, (5, 5), 0)
+        blurred = cv2.GaussianBlur(color_image, (11, 11), 0)
         # 显示滤波图
         cv2.imshow('blurred', blurred)
         cv2.waitKey(1)

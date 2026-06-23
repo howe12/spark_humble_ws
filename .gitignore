@@ -25,3 +25,4 @@ log
 *.orig
 .tmp
 src/spark_app/spark_yolov8/model/sam_b.pt
+src/spark_app/spark_yolov8/model/yolov8s-world.pt
