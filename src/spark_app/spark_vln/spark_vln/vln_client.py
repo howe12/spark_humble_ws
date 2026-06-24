@@ -14,6 +14,7 @@ import atexit
 import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rcl_interfaces.msg import SetParametersResult
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
@@ -25,7 +26,7 @@ import requests
 from cv_bridge import CvBridge
 
 # ── Custom service type (inline to avoid extra package) ──
-from std_srvs.srv import SetBool
+# Instruction passed via ROS2 param: ros2 param set /vln_client instruction '...' 
 
 # ── SSH tunnel ──
 import paramiko
@@ -56,7 +57,7 @@ class VLNClient(Node):
         self.declare_parameter('angular_speed', 0.5)
         self.declare_parameter('step_interval', 1.5)
         self.declare_parameter('image_quality', 85)
-        self.declare_parameter('http_timeout', 10.0)
+        self.declare_parameter('http_timeout', 15.0)
         # Tunnel params
         self.declare_parameter('l40_host', '120.209.70.195')
         self.declare_parameter('l40_ssh_port', 30456)
@@ -83,12 +84,21 @@ class VLNClient(Node):
 
         self.cv_bridge = CvBridge()
 
+        # ── Display state ──
+        self.declare_parameter('display_enabled', True)
+        self.display_enabled = self.get_parameter('display_enabled').value
+
+
         # ── State ──
         self.state = 'IDLE'
         self.instruction = ''
         self.latest_image = None
         self.step_id = 0
         self.session_id = f'spark_{int(time.time())}'
+
+        # ── Anti-spin: track consecutive turns ──
+        self._turn_count = 0
+        self._last_turn_dir = None
 
         # ── Lock ──
         self._lock = threading.Lock()
@@ -109,13 +119,25 @@ class VLNClient(Node):
             Trigger, '/vln/start', self._on_start)
         self.stop_srv = self.create_service(
             Trigger, '/vln/stop', self._on_stop)
-        self.instr_srv = self.create_service(
-            SetBool, '/vln/set_instruction', self._on_set_instruction,
-            callback_group=MutuallyExclusiveCallbackGroup())
+        self.declare_parameter('instruction', '')
+        self.instruction = self.get_parameter('instruction').value
+
+        # ── Parameter callback for instruction ──
+        self.add_on_set_parameters_callback(self._on_param_update)
 
         # ── Timer ──
         self.loop_timer = None
         self.idle_timer = self.create_timer(0.5, self._idle_tick)
+
+        # ── Display window init ──
+        if self.display_enabled:
+            os.environ.setdefault('DISPLAY', ':0')
+            try:
+                cv2.namedWindow('Spark VLN', cv2.WINDOW_NORMAL)
+                cv2.resizeWindow('Spark VLN', 640, 560)
+            except Exception as e:
+                self.get_logger().warn(f'Display init failed: {e}')
+                self.display_enabled = False
 
         self._stop_cmd_vel()
         self._publish_status('IDLE')
@@ -155,29 +177,59 @@ class VLNClient(Node):
             self.get_logger().error(f'SSH tunnel failed: {e}')
             return False
 
+
+
+    # ── Display ──
+    def _update_display(self, img, action, step_id, instruction):
+        """Build display frame + show immediately."""
+        if not self.display_enabled or img is None:
+            return
+        h, w = img.shape[:2]
+        canvas_h = h + 80
+        canvas = np.zeros((canvas_h, w, 3), dtype=np.uint8)
+        canvas[:h, :w] = img
+
+        colors = {'MOVE_FORWARD': (0, 255, 0), 'TURN_LEFT': (0, 255, 255),
+                  'TURN_RIGHT': (0, 255, 255), 'STOP': (0, 0, 255)}
+        color = colors.get(action, (255, 255, 255))
+
+        cv2.rectangle(canvas, (0, h), (w, canvas_h), (30, 30, 30), -1)
+        instr_short = instruction[:30] + ('...' if len(instruction) > 30 else '')
+        cv2.putText(canvas, f"🎯 {instr_short}", (10, h + 28),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+        cv2.putText(canvas, f"Step {step_id}  |  {action}", (10, h + 58),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+
+        cv2.imshow('Spark VLN', canvas)
+        cv2.waitKey(1)
+
     # ── Image callback ──
     def _on_image(self, msg: Image):
         try:
             self.latest_image = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+            if self.display_enabled and self.state == 'IDLE' and self.latest_image is not None:
+                self._update_display(self.latest_image, 'WAITING', 0, self.instruction or '等待指令...')
         except Exception:
             pass
 
+    # ── Parameter update callback ──
+    def _on_param_update(self, params):
+        for p in params:
+            if p.name == 'instruction':
+                self.instruction = p.value.strip()
+                self.get_logger().info(f'Instruction updated: {self.instruction}')
+        return SetParametersResult(successful=True)
+
     # ── Idle keepalive ──
     def _idle_tick(self):
-        if self.state == 'IDLE':
+        if self.state in ('IDLE', 'STOPPED'):
             self._stop_cmd_vel()
 
     # ── Services ──
-    def _on_set_instruction(self, req, resp):
-        self.instruction = req.data.strip()
-        if not self.instruction:
-            resp.success = False
-            resp.message = 'Instruction cannot be empty'
-        else:
-            resp.success = True
-            resp.message = f'Instruction set: {self.instruction}'
-            self.get_logger().info(f'Instruction: {self.instruction}')
-        return resp
+    def _on_set_instruction_legacy(self):
+        import warnings
+        warnings.warn('Use ros2 param set /vln_client instruction instead', DeprecationWarning)
+
 
     def _on_start(self, req, resp):
         if not self.instruction:
@@ -234,6 +286,8 @@ class VLNClient(Node):
         if self.loop_timer:
             self.destroy_timer(self.loop_timer)
             self.loop_timer = None
+        if self.display_enabled:
+            cv2.destroyWindow('Spark VLN')
         self._stop_cmd_vel()
 
     # ── Control tick ──
@@ -248,6 +302,13 @@ class VLNClient(Node):
             return
 
         try:
+            # Resize to reduce L40 memory pressure (模型43GB, 只剩1GB做推理)
+            h, w = img.shape[:2]
+            max_size = 384
+            if max(h, w) > max_size:
+                scale = max_size / max(h, w)
+                new_w, new_h = int(w * scale), int(h * scale)
+                img = cv2.resize(img, (new_w, new_h))
             ok, jpg = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, self.image_quality])
             if not ok:
                 self.get_logger().error('JPEG encode failed')
@@ -276,7 +337,25 @@ class VLNClient(Node):
             self._on_error(f'HTTP error: {e}')
             return
 
+        # Anti-spin: if 3+ same turns, force MOVE_FORWARD
+        if action in ("TURN_LEFT", "TURN_RIGHT"):
+            if action == self._last_turn_dir:
+                self._turn_count += 1
+            else:
+                self._turn_count = 1
+            self._last_turn_dir = action
+            if self._turn_count >= 3:
+                self.get_logger().warn(f"Anti-spin: {self._turn_count} consecutive {action}, forcing MOVE_FORWARD")
+                action = "MOVE_FORWARD"
+                self._turn_count = 0
+                self._last_turn_dir = None
+        elif action == "MOVE_FORWARD":
+            self._turn_count = 0
+            self._last_turn_dir = None
+
         self._execute_action(action)
+
+
         self.step_id += 1
 
         if action == 'STOP':
@@ -294,9 +373,7 @@ class VLNClient(Node):
         elif action == 'TURN_RIGHT':
             twist.angular.z = -self.angular_speed
         self.cmd_pub.publish(twist)
-        if action != 'STOP':
-            time.sleep(self.step_interval_step * 2)
-            self._stop_cmd_vel()
+        # Keep moving until next action — don't stop between steps
 
     def _stop_cmd_vel(self):
         self.cmd_pub.publish(Twist())

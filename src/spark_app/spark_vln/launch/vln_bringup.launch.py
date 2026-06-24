@@ -63,11 +63,12 @@ def generate_launch_description():
     # ── 3. VLN client ──
     vln_node = Node(
         package='spark_vln',
-        executable="/home/spark/Music/spark_humble/install/spark_vln/bin/vln_client",
+        executable='vln_client',
         name='vln_client',
         output='screen',
         condition=IfCondition(lcf('start_vln')),
         namespace=lcf('namespace'),
+        additional_env={'DISPLAY': ':0'},
         parameters=[{
             'l40_url': lcf('l40_url'),
             'l40_host': lcf('l40_host'),

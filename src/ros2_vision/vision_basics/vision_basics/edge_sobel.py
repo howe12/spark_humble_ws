@@ -4,7 +4,7 @@ import sys
 
 # 读取图像（转灰度图）
 image_path = sys.path[0]
-image = cv2.imread(image_path + "/../pictures/test_pattern.png", cv2.IMREAD_GRAYSCALE)
+image = cv2.imread(image_path + "/../pictures/lena.png", cv2.IMREAD_GRAYSCALE)
 
 # 用 cv2.Sobel() 计算水平和垂直梯度
 # cv2.CV_64F：保留负值（梯度方向信息）
