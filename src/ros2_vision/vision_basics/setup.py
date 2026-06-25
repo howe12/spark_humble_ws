@@ -39,6 +39,7 @@ setup(
             'pcd_stats = vision_basics.pcd_stats:main',
             'ros2_grasp_detect = vision_basics.ros2_grasp_detect:main',
             'ros2_tag_detect = vision_basics.ros2_tag_detect:main',
+            'ros2_apriltag_detect = vision_basics.ros2_apriltag_detect:main',
             'ros2_stereo_compare = vision_basics.ros2_stereo_compare:main',
             'depth_quality = vision_basics.depth_quality:main',
             'slam_tracker = vision_basics.slam_tracker:main',
