@@ -15,11 +15,13 @@ SAM (Segment Anything Model) 是 Meta 的基础分割模型，
 """
 
 import os, sys
+from ament_index_python.packages import get_package_share_directory
 import cv2
 import numpy as np
 from ultralytics import SAM
 
-MODEL_DIR = os.path.expanduser('~/Music/spark_humble/src/spark_app/spark_yolov8/model')
+# 模型路径（从 spark_yolov8 包中定位）
+MODEL_DIR = os.path.join(get_package_share_directory('spark_yolov8'), 'model')
 PROJ_DIR = os.path.expanduser('~/Music/spark_humble/src/ros2_vision/vision_basics')
 
 

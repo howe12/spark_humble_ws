@@ -13,6 +13,7 @@ RT-DETR 是百度提出的实时端到端 Transformer 检测器，直接通过 Y
 """
 
 import os, sys, time
+from ament_index_python.packages import get_package_share_directory
 import cv2
 from ultralytics import YOLO
 

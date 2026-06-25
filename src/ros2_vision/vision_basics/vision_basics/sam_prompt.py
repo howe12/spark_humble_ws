@@ -22,6 +22,7 @@ SAM 交互式点提示分割
 """
 
 import os, sys
+from ament_index_python.packages import get_package_share_directory
 import cv2
 import numpy as np
 from ultralytics import SAM

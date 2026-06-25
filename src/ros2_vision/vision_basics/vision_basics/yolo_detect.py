@@ -10,11 +10,13 @@
 
 import sys
 import os
+import cv2
 from ultralytics import YOLO
+from ament_index_python.packages import get_package_share_directory
 
-# 模型路径（Spark 项目中已存在）
-MODEL = os.path.expanduser(
-    '~/Music/spark_humble/src/spark_app/spark_yolov8/model/yolov8n.pt')
+# 模型路径（从 spark_yolov8 包中定位）
+MODEL = os.path.join(
+    get_package_share_directory('spark_yolov8'), 'model', 'yolov8n.pt')
 
 # 加载模型
 model = YOLO(MODEL)

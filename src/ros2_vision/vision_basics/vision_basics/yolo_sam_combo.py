@@ -16,11 +16,12 @@ YOLO 先检测目标框 → SAM 用检测框做 prompt 精确分割每个目标�
 """
 
 import os, sys
+from ament_index_python.packages import get_package_share_directory
 import cv2
 import numpy as np
 from ultralytics import YOLO, SAM
 
-MODEL_DIR = os.path.expanduser('~/Music/spark_humble/src/spark_app/spark_yolov8/model')
+MODEL_DIR = os.path.join(get_package_share_directory('spark_yolov8'), 'model')
 PROJ_DIR = os.path.expanduser('~/Music/spark_humble/src/ros2_vision/vision_basics')
 
 
