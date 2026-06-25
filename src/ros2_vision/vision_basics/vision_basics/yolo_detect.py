@@ -16,7 +16,7 @@ from ament_index_python.packages import get_package_share_directory
 
 # 模型路径（从 spark_yolov8 包中定位）
 MODEL = os.path.join(
-    get_package_share_directory('spark_yolov8'), 'model', 'yolov8n.pt')
+    get_package_share_directory('vision_basics'), 'model', 'yolov8n.pt')
 
 # 加载模型
 model = YOLO(MODEL)

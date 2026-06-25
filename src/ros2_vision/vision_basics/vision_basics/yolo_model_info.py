@@ -13,7 +13,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
-MODEL_DIR = os.path.join(get_package_share_directory('spark_yolov8'), 'model')
+MODEL_DIR = os.path.join(get_package_share_directory('vision_basics'), 'model')
 
 
 def main():

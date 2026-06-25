@@ -10,6 +10,13 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/model', [
+            'model/yolov8n.pt',
+            'model/yolov8s.pt',
+            'model/yolov8n-seg.pt',
+            'model/yolov8n-pose.pt',
+            'model/yolov8s-world.pt',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

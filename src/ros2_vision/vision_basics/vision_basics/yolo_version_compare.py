@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-MODEL_DIR = os.path.join(get_package_share_directory('spark_yolov8'), 'model')
+MODEL_DIR = os.path.join(get_package_share_directory('vision_basics'), 'model')
 PROJ_DIR = os.path.expanduser('~/Music/spark_humble/src/ros2_vision/vision_basics')
 
 # ── 候选模型列表（名称, 展示名, 任务类型）──
