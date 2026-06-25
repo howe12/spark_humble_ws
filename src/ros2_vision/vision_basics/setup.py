@@ -48,6 +48,8 @@ setup(
             'ros2_yolo_pose = vision_basics.ros2_yolo_pose:main',
             'ros2_rtdetr = vision_basics.ros2_rtdetr:main',
             'ros2_yolo_world = vision_basics.ros2_yolo_world:main',
+            'ros2_depth_follow = vision_basics.ros2_depth_follow:main',
+            'depth_follow_tuner = vision_basics.depth_follow_tuner:main',
         ],
     },
 )
