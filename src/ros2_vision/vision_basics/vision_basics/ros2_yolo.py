@@ -13,11 +13,12 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import os
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
 
-MODEL = os.path.expanduser(
-    '~/Music/spark_humble/src/spark_app/spark_yolov8/model/yolov8n.pt')
+MODEL = os.path.join(
+    get_package_share_directory('vision_basics'), 'model', 'yolov8n.pt')
 
 
 class YoloNode(Node):
@@ -28,7 +29,7 @@ class YoloNode(Node):
         self.conf = 0.3
 
         self.sub = self.create_subscription(
-            Image, '/camera/camera/color/image_raw', self.callback, 10)
+            Image, '/camera/color/image_raw', self.callback, 10)
         self.get_logger().info(f'YOLOv8n 已加载 | 等待相机帧')
 
     def callback(self, msg):

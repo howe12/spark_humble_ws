@@ -14,14 +14,15 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 import cv2
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
 class YoloDetection(Node):
 # 初始化函数，包括加载模型和创建订阅者
     def __init__(self):
         # 加载模型
-        pt_path = sys.path[0]
-        self.model = YOLO(pt_path + '/model/yolov8n-pose.pt')
+        pt_path = get_package_share_directory('spark_yolov8')
+        self.model = YOLO(os.path.join(pt_path, 'model', 'yolov8n-pose.pt'))
       
         # 创建订阅者
         super().__init__('Yolo')

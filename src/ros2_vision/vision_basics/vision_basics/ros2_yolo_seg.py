@@ -11,12 +11,13 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import os
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
 
 MODEL_NAME = 'yolov8n-seg.pt'
-local_model = os.path.expanduser(
-    f'~/Music/spark_humble/src/spark_app/spark_yolov8/model/{MODEL_NAME}')
+local_model = os.path.join(
+    get_package_share_directory('vision_basics'), 'model', MODEL_NAME)
 MODEL = local_model if os.path.exists(local_model) else MODEL_NAME
 
 
