@@ -7,14 +7,17 @@ ROS2 RT-DETR 实时检测节点
 """
 
 import time
+import os
 import cv2
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
-MODEL = 'rtdetr-l.pt'
+MODEL = os.path.join(
+    get_package_share_directory('vision_basics'), 'model', 'rtdetr-l.pt')
 
 
 class RTDETRNode(Node):
@@ -26,7 +29,7 @@ class RTDETRNode(Node):
         self.model = YOLO(MODEL)  # 可用 RTDETR() 或 YOLO()
 
         self.image_sub = self.create_subscription(
-            Image, '/camera/color/image_raw', self.image_callback, 10)
+            Image, '/camera/camera/color/image_raw', self.image_callback, 10)
 
         self.last_fps_time = time.time()
         self.frame_count = 0
