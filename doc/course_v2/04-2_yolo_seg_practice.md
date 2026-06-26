@@ -112,6 +112,7 @@
 ### 本地图像程序
 
 - `yolo_seg.py` — 本地图片实例分割。对 lena.png + two_blue_cube.png 推理，终端打印每个实例的类别、置信度、中心坐标、遮罩点数，并用 `r.plot()` 显示分割结果。插入到参考版「第 5 章」末尾。
+- `yolo_seg_mask_explore.py` — 🔴 实战：解析 mask 数据。深入探索 masks.xy（轮廓坐标 → 点数/面积/中心）和 masks.data（概率热力图 → 有效像素），逐实例提取独立二值 mask 并可视化。插入到参考版「第 6 章」末尾。
 
 ### ROS2 相机程序
 
@@ -331,6 +332,206 @@ if __name__ == '__main__':
 
 ---
 
+## 3. yolo_seg_mask_explore.py — 实战：解析 mask 数据
+
+### 插入位置
+参考版「第 6 章 本地视频实例分割」末尾，作为「6.X 实战：深入解析 mask 数据」
+
+### 参考版描述
+参考版第 6 章只用 `r.plot()` 画 mask，未讲解 mask 数据的内部结构。
+
+### 参考版审查
+- ⚠️ 只教 `r.plot()` 不教数据——学员不知道 mask 到底是什么
+- ⚠️ 未区分 masks.xy（轮廓）和 masks.data（概率图）两种表示
+
+### 设计原因
+`r.plot()` 是「黑盒」——学员看不到 mask 数据长什么样。本实战把 mask 拆开：
+
+1. **masks.xy** — 轮廓坐标数组 `(N_pts, 2)`，用 Shoelace 公式算面积、求中心
+2. **masks.data** — 概率热力图 `(H, W)`，看哪些像素置信度 >0.5/>0.9
+3. **独立 mask 提取** — `cv2.fillPoly` 生成二值 mask，统计像素数
+4. **可视化网格** — 原始图 → 全量标注 → 逐实例半透明叠加
+
+学员学完后能回答：「mask 到底是什么？怎么提取单个物体的精确形状？」
+
+### 完整代码
+
+```python
+#!/usr/bin/env python3
+"""04-2 实战：解析 mask 数据
+
+对本地图片运行 YOLOv8n-seg，深入解析 mask 数据结构：
+  - masks.xy: 轮廓坐标 → 点数/面积/中心
+  - masks.data: 概率热力图 → 有效像素/覆盖面积
+  - 逐实例提取 → 独立 mask 可视化
+
+用法：
+    python3 yolo_seg_mask_explore.py                     # 默认 two_blue_cube.png
+    python3 yolo_seg_mask_explore.py pictures/lena.png   # 指定图片
+"""
+
+import os, sys
+import cv2
+import numpy as np
+from ament_index_python.packages import get_package_share_directory
+from ultralytics import YOLO
+
+# ── 模型加载 ──
+MODEL_DIR = os.path.join(get_package_share_directory('vision_basics'), 'model')
+model = YOLO(os.path.join(MODEL_DIR, 'yolov8n-seg.pt'))
+
+# ── 图片加载 ──
+_base = os.path.dirname(os.path.abspath(__file__))
+PIC_DIR = os.path.join(_base, '..', 'pictures')
+img_name = sys.argv[1] if len(sys.argv) > 1 else os.path.join(PIC_DIR, 'two_blue_cube.png')
+if not os.path.isabs(img_name):
+    img_name = os.path.join(PIC_DIR, img_name)
+
+img = cv2.imread(img_name)
+if img is None:
+    print(f'❌ 图片不存在: {img_name}')
+    sys.exit(1)
+print(f'📷 图片: {os.path.basename(img_name)} ({img.shape[1]}x{img.shape[0]})')
+
+# ── 推理 ──
+results = model(img, conf=0.25, verbose=False)
+r = results[0]
+boxes = r.boxes
+masks = r.masks
+names = r.names
+
+if boxes is None or len(boxes) == 0:
+    print('⚠️ 未检测到目标')
+    cv2.imshow('Original', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    sys.exit(0)
+
+n = len(boxes)
+print(f'🎯 检测到 {n} 个实例\n')
+
+# ══════════════════════════════════════════════════
+# 1. 逐实例打印 mask 数据
+# ══════════════════════════════════════════════════
+print('═' * 60)
+print('📊 逐实例 mask 数据')
+print('═' * 60)
+
+instance_masks = []
+
+for i in range(n):
+    cls_id = int(boxes.cls[i])
+    conf = float(boxes.conf[i])
+    name = names.get(cls_id, f'id:{cls_id}')
+
+    # ── masks.xy: 轮廓坐标 ──
+    if masks is not None and i < len(masks.xy):
+        contour = masks.xy[i]
+        n_pts = len(contour)
+
+        # Shoelace 面积公式
+        if n_pts >= 3:
+            x, y = contour[:, 0], contour[:, 1]
+            area = 0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+        else:
+            area = 0
+
+        # 中心、边界框
+        cx, cy = contour[:, 0].mean(), contour[:, 1].mean()
+        xmin, ymin = contour[:, 0].min(), contour[:, 1].min()
+        xmax, ymax = contour[:, 0].max(), contour[:, 1].max()
+
+        print(f'\n实例 {i}: {name} (conf={conf:.2f})')
+        print(f'  masks.xy 形状: ({n_pts}, 2) — {n_pts} 个轮廓点')
+        print(f'  轮廓面积:     {area:.0f} px²')
+        print(f'  轮廓中心:     ({cx:.0f}, {cy:.0f})')
+        print(f'  轮廓边界框:   ({xmin:.0f}, {ymin:.0f}) → ({xmax:.0f}, {ymax:.0f})')
+
+        # 生成独立二值 mask
+        bin_mask = np.zeros(img.shape[:2], dtype=np.uint8)
+        pts = contour.astype(np.int32).reshape((-1, 1, 2))
+        cv2.fillPoly(bin_mask, [pts], 255)
+        mask_pixels = cv2.countNonZero(bin_mask)
+        print(f'  二值 mask 像素: {mask_pixels}')
+
+        instance_masks.append((name, bin_mask, contour))
+
+    # ── masks.data: 概率热力图 ──
+    if masks is not None and i == 0 and hasattr(masks, 'data'):
+        prob = masks.data[0].cpu().numpy()
+        print(f'\n💡 masks.data 概率热力图（实例 0 演示）:')
+        print(f'  data shape: {masks.data.shape}')
+        print(f'  data 范围:  [{prob.min():.3f}, {prob.max():.3f}]')
+        print(f'  data ≥ 0.5: {(prob >= 0.5).sum()} px')
+        print(f'  data ≥ 0.9: {(prob >= 0.9).sum()} px')
+
+# ══════════════════════════════════════════════════
+# 2. 可视化网格
+# ══════════════════════════════════════════════════
+print(f'\n{"═"*60}')
+print('🖼️  可视化：原始 → 全量 → 逐实例')
+
+panels = [img.copy()]
+labels = ['Original']
+
+annotated = r.plot()
+panels.append(annotated)
+labels.append('All masks')
+
+colors = [(0,0,255),(0,255,0),(255,0,0),(255,255,0),(255,0,255),(0,255,255)]
+for idx, (name, bin_mask, contour) in enumerate(instance_masks):
+    overlay = img.copy()
+    color = colors[idx % len(colors)]
+    colored = np.zeros_like(img)
+    colored[bin_mask > 0] = color
+    overlay = cv2.addWeighted(overlay, 0.6, colored, 0.4, 0)
+    pts = contour.astype(np.int32).reshape((-1, 1, 2))
+    cv2.polylines(overlay, [pts], True, color, 2)
+    cx, cy = int(contour[:,0].mean()), int(contour[:,1].mean())
+    cv2.putText(overlay, f'{idx}:{name}', (cx-30, cy),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    panels.append(overlay)
+    labels.append(f'{name} only')
+
+ROWS = (len(panels) + 2) // 3
+cell_h, cell_w = 200, 300
+grid = np.zeros((ROWS*cell_h, 3*cell_w, 3), dtype=np.uint8)
+
+for i, (panel, label) in enumerate(zip(panels, labels)):
+    r, c = i // 3, i % 3
+    y1, y2 = r*cell_h, (r+1)*cell_h
+    x1, x2 = c*cell_w, (c+1)*cell_w
+    resized = cv2.resize(panel, (cell_w, cell_h))
+    grid[y1:y2, x1:x2] = resized
+    cv2.putText(grid, label, (x1+5, y1+20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255,255,255), 1)
+
+cv2.imshow('Mask 数据探索 — 按任意键退出', grid)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+print('\n✅ 完成。面板含义：')
+print('  Original     — 原始图片')
+print('  All masks    — r.plot() 全量标注')
+print('  {name} only  — 单实例半透明 mask + 轮廓')
+```
+
+### 执行流程
+
+1. 加载 `yolov8n-seg.pt` → 读取图片 → 推理
+2. **逐实例解析 masks.xy**：
+   - 打印轮廓点数（`len(masks.xy[i])`）
+   - Shoelace 公式计算多边形面积
+   - 轮廓均值求中心坐标
+   - 打印边界框与 boxes.xywh 对比
+   - `cv2.fillPoly` 生成独立二值 mask
+3. **解析 masks.data**（仅第一个实例演示）：
+   - 打印概率热力图 shape `(N, H, W)`
+   - 统计 ≥0.5 和 ≥0.9 的像素数
+4. **可视化网格**：原始图 → 全量标注 → 逐实例半透明叠加 + 轮廓线
+
+---
+
 ## 运行步骤
 
 ### 本地程序
@@ -346,6 +547,25 @@ python3 yolo_seg.py
 - 终端打印每张图片的每个实例信息（类别、置信度、中心坐标、遮罩点数）
 - 弹出两个窗口，分别显示 lena.png 和 two_blue_cube.png 的分割结果（mask 叠加 + 边界框）
 - 按任意键关闭窗口
+
+### 实战：解析 mask 数据
+
+```bash
+cd /home/spark/Music/spark_humble/src/ros2_vision/vision_basics/vision_basics
+export DISPLAY=:0
+
+# 默认图片（two_blue_cube.png，多物体场景）
+python3 yolo_seg_mask_explore.py
+
+# 或指定图片
+python3 yolo_seg_mask_explore.py pictures/lena.png
+```
+
+预期输出：
+- 终端打印每个实例的 masks.xy 数据（轮廓点数/面积/中心/边界框）
+- 展示 masks.data 概率热力图信息（shape / 范围 / ≥0.5 像素数）
+- 弹出可视化网格窗口：原始 → 全量 → 逐实例半透明 mask
+- 按任意键关闭
 
 ### ROS2 相机程序
 
