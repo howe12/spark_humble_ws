@@ -42,8 +42,9 @@ def main():
             model = YOLO(path)
             task = model.task
             try:
-                info = model.info()
-                params_m = info.get('parameters', 0) / 1e6
+                # model.info() prints to stdout, extract params from model.model
+                import torch
+                params_m = sum(p.numel() for p in model.model.parameters()) / 1e6
             except Exception:
                 params_m = 0
         except Exception:

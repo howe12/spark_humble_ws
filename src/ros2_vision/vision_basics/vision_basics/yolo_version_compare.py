@@ -42,11 +42,11 @@ def get_model_path(name):
 
 
 def truncate_model_info(model):
-    """提取模型元信息（处理不同 ultralytics 版本兼容）"""
+    """提取模型元信息"""
     try:
-        info = model.info()
-        params_m = info.get('parameters', 0) / 1e6
-        flops_b = info.get('GFLOPs', info.get('flops', 0))
+        import torch
+        params_m = sum(p.numel() for p in model.model.parameters()) / 1e6
+        flops_b = 0  # GFLOPs not reliably available
         return params_m, flops_b
     except Exception:
         return 0, 0
