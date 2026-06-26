@@ -6,6 +6,102 @@
 
 ---
 
+## 📦 环境准备
+
+### 1. 安装 ultralytics
+
+```bash
+pip install ultralytics
+# 验证
+python3.10 -c "from ultralytics import YOLO; print('OK')"
+# → OK
+```
+
+> ⚠️ 注意：Hermes 的虚拟环境 `python3` 不带 opencv，用系统的 `python3.10`。
+
+### 2. 确认 OpenCV 可用
+
+```bash
+python3.10 -c "import cv2; print(cv2.__version__)"
+# → 4.9.0（或类似版本号）
+```
+
+如果报 `ModuleNotFoundError`：
+```bash
+pip install opencv-python
+```
+
+### 3. 确认 ROS2 环境（ROS2 节点必需）
+
+```bash
+# cv_bridge 用于 ROS 图像消息 ↔ OpenCV 格式转换
+sudo apt install ros-humble-cv-bridge
+# ament_index 用于查找包内文件路径
+sudo apt install ros-humble-ament-index-python
+```
+
+### 4. 下载 RT-DETR 模型
+
+`rtdetr-l.pt` 约 128MB，不在 Git 仓库中。
+
+```bash
+# 方式 1：Python 自动下载（需科学上网）
+cd ~/Music/spark_humble/src/ros2_vision/vision_basics/model/
+python3.10 -c "from ultralytics import YOLO; YOLO('rtdetr-l.pt')"
+
+# 方式 2：wget 手动下载（同样需科学上网）
+wget https://github.com/ultralytics/assets/releases/download/v8.2.0/rtdetr-l.pt
+
+# 方式 3：从其他机器 scp 过来
+scp user@other-machine:/path/to/rtdetr-l.pt .
+
+# 验证
+ls -lh rtdetr-l.pt          # 应显示 ~128MB
+python3.10 -c "from ultralytics import YOLO; m=YOLO('rtdetr-l.pt'); print(m.task)"
+# → detect
+```
+
+### 5. 编译 vision_basics 包
+
+```bash
+cd ~/Music/spark_humble
+source /opt/ros/humble/setup.bash
+colcon build --packages-select vision_basics
+source install/setup.bash
+```
+
+### 6. 确认模型可被程序找到
+
+```bash
+python3.10 -c "
+from ament_index_python.packages import get_package_share_directory
+import os
+path = os.path.join(get_package_share_directory('vision_basics'), 'model', 'rtdetr-l.pt')
+print('模型路径:', path)
+print('文件存在:', os.path.exists(path))
+"
+# → 模型路径: .../install/vision_basics/share/vision_basics/model/rtdetr-l.pt
+# → 文件存在: True
+```
+
+> 💡 步骤 4~6 也适用于其他模型（yolov8n.pt / sam_b.pt 等），流程完全一致：下载 → 放 model/ → colcon build。
+
+### 7. 确认 ROS2 可用（ROS2 节点）
+
+```bash
+# 检查 ROS2 环境
+source /opt/ros/humble/setup.bash
+ros2 --version
+# → humble
+
+# 确认 vision_basics 包的 ROS2 入口
+source ~/Music/spark_humble/install/setup.bash
+ros2 run vision_basics ros2_rtdetr --help 2>&1 | head -3
+# 应该启动节点（没有相机时会等待，Ctrl+C 退出即可）
+```
+
+---
+
 ## 参考版结构 & 实践版插入点
 
 参考版 7 章，实践版聚焦第 4/5/6 章实战部分：
@@ -388,29 +484,6 @@ ros2 run vision_basics ros2_rtdetr
 ```
 
 **只改了 3 行！** 这就是 ultralytics 统一 API 的力量——换模型只需换文件路径，代码逻辑零改动。
-
----
-
-# 📦 模型下载
-
-`rtdetr-l.pt` 约 128MB，不在 Git 仓库中（.gitignore 排除）。
-
-```bash
-# 方式 1：Python 自动下载（需科学上网）
-python3.10 -c "from ultralytics import YOLO; YOLO('rtdetr-l.pt')"
-
-# 方式 2：wget 手动下载（同样需科学上网）
-cd ~/Music/spark_humble/src/ros2_vision/vision_basics/model/
-wget https://github.com/ultralytics/assets/releases/download/v8.2.0/rtdetr-l.pt
-
-# 验证
-ls -lh rtdetr-l.pt          # 应显示 ~128MB
-python3.10 -c "from ultralytics import YOLO; m=YOLO('rtdetr-l.pt'); print(m.task)"
-# → detect
-
-# 重新编译让模型进入 install 目录
-cd ~/Music/spark_humble && colcon build --packages-select vision_basics
-```
 
 ---
 
