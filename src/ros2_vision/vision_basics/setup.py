@@ -16,6 +16,7 @@ setup(
             'model/yolov8n-seg.pt',
             'model/yolov8n-pose.pt',
             'model/yolov8s-world.pt',
+            'model/sam_b.pt',
         ]),
     ],
     install_requires=['setuptools'],
