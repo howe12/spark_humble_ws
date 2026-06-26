@@ -27,8 +27,9 @@ import cv2
 import numpy as np
 from ultralytics import SAM
 
-MODEL_DIR = os.path.expanduser('~/Music/spark_humble/src/spark_app/spark_yolov8/model')
-PROJ_DIR = os.path.expanduser('~/Music/spark_humble/src/ros2_vision/vision_basics')
+MODEL_DIR = os.path.join(get_package_share_directory('vision_basics'), 'model')
+_base = os.path.dirname(os.path.abspath(__file__))
+PROJ_DIR = os.path.join(_base, '..')
 
 # 颜色
 GREEN = (0, 255, 0)      # 前景点

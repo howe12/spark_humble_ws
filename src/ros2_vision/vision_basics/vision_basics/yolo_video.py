@@ -11,10 +11,11 @@
 import sys
 import os
 import cv2
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
-MODEL = os.path.expanduser(
-    '~/Music/spark_humble/src/spark_app/spark_yolov8/model/yolov8n.pt')
+MODEL = os.path.join(
+    get_package_share_directory('vision_basics'), 'model', 'yolov8n.pt')
 
 # 视频源: 命令行参数 > 默认摄像头
 video_src = sys.argv[1] if len(sys.argv) > 1 else 0

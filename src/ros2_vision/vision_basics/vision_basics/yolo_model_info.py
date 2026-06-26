@@ -55,12 +55,9 @@ def main():
     print('-' * 50)
     print(f'总计: {total_mb:.1f} MB')
 
-    print('\n💡 要下载新模型（如 YOLO11n），运行：')
-    print('   cd ~/Music/spark_humble/src/spark_app/spark_yolov8/model')
-    print('   wget https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt')
+    print('💡 要下载新模型（如 YOLO11n）：')
+    print('   from ultralytics import YOLO; YOLO(\"yolo11n.pt\")  # 自动下载')
     print()
-    print('   或者在 Python 中：')
-    print("   from ultralytics import YOLO; YOLO('yolo11n.pt')  # 自动下载")
 
 
 if __name__ == '__main__':

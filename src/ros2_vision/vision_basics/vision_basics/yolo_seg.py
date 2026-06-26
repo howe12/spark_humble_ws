@@ -10,14 +10,14 @@
 import sys
 import os
 import cv2
+from ament_index_python.packages import get_package_share_directory
 from ultralytics import YOLO
 
 # 模型路径 — 需要先下载: yolo predict model=yolov8n-seg.pt (参考版第4章)
 MODEL_NAME = 'yolov8n-seg.pt'
 
-# 尝试从本地项目路径加载, 否则自动下载
-local_model = os.path.expanduser(
-    f'~/Music/spark_humble/src/spark_app/spark_yolov8/model/{MODEL_NAME}')
+local_model = os.path.join(
+    get_package_share_directory('vision_basics'), 'model', MODEL_NAME)
 if os.path.exists(local_model):
     model_path = local_model
 else:

@@ -22,7 +22,8 @@ from ultralytics import SAM
 
 # 模型路径（从 spark_yolov8 包中定位）
 MODEL_DIR = os.path.join(get_package_share_directory('vision_basics'), 'model')
-PROJ_DIR = os.path.expanduser('~/Music/spark_humble/src/ros2_vision/vision_basics')
+_base = os.path.dirname(os.path.abspath(__file__))
+PROJ_DIR = os.path.join(_base, '..')
 
 
 def get_model(name):
