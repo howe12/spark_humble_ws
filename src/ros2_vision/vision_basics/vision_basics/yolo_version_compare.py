@@ -102,7 +102,7 @@ def main():
         for label, annotated, n, t, sz, p in results_data:
             h, w = annotated.shape[:2]
             # 叠加 label
-            cv2.putText(annotated, f'{label} | {n}框 {t:.0f}ms',
+            cv2.putText(annotated, f'{label} | {n} boxes {t:.0f}ms',
                         (5, h - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
             panels.append(annotated)
 
@@ -120,7 +120,7 @@ def main():
             rows.append(np.hstack(row_resized))
 
         comparison = np.vstack(rows)
-        cv2.imshow('YOLO 版本对比 — 按任意键退出', comparison)
+        cv2.imshow('YOLO Version Compare — press any key', comparison)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 

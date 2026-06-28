@@ -85,7 +85,7 @@ def main():
     cv2.putText(comparison, 'YOLO + SAM', (img.shape[1] + 5, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-    cv2.imshow('YOLO (左) vs YOLO+SAM (右) — 按任意键退出', comparison)
+    cv2.imshow('YOLO (L) vs YOLO+SAM (R) — press any key', comparison)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 

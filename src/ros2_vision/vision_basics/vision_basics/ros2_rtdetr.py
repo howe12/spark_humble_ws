@@ -52,7 +52,7 @@ class RTDETRNode(Node):
 
         cv2.putText(annotated, f'RT-DETR FPS: {self.fps_value:.1f}',
                     (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.imshow('RT-DETR — ROS2 实时', annotated)
+        cv2.imshow('RT-DETR — ROS2 Real-time', annotated)
         cv2.waitKey(1)
 
     def destroy(self):

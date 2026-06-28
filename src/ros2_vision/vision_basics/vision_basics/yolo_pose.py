@@ -60,7 +60,7 @@ def main():
 
         # 绘制结果
         annotated = results[0].plot()
-        cv2.imshow('YOLOv8 Pose — 按 q 退出', annotated)
+        cv2.imshow('YOLOv8 Pose — press q to quit', annotated)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

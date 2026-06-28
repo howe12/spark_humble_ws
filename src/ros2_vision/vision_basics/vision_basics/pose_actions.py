@@ -143,7 +143,7 @@ def main():
         cv2.putText(annotated, f'Knee:{knee_angle:.0f}d', (10, 115),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 255), 2)
 
-        cv2.imshow('动作分析 — q退出 r重置', annotated)
+        cv2.imshow('Pose Actions — q:quit r:reset', annotated)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):

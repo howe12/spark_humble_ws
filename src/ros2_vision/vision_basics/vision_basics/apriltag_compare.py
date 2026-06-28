@@ -63,7 +63,7 @@ if aruco_ids is not None:
                 f'ArUco: {len(aruco_ids)} tags',
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 else:
-    cv2.putText(display_aruco, 'ArUco: 0 tags (未检测到)',
+    cv2.putText(display_aruco, 'ArUco: 0 tags (not detected)',
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 # --- AprilTag 可视化 ---
@@ -88,7 +88,7 @@ if apriltag_result:
                 f'AprilTag: {len(apriltag_result)} tags',
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 else:
-    cv2.putText(display_apriltag, 'AprilTag: 0 tags (ArUco标记不被识别)',
+    cv2.putText(display_apriltag, 'AprilTag: 0 tags (ArUco markers not recognized)',
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 # --- 并排显示 ---

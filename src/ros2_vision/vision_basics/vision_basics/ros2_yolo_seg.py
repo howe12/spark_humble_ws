@@ -29,7 +29,7 @@ class YoloSegNode(Node):
         self.conf = 0.3
 
         self.sub = self.create_subscription(
-            Image, '/camera/camera/color/image_raw', self.callback, 10)
+            Image, '/camera/color/image_raw', self.callback, 10)
         self.get_logger().info(f'YOLOv8n-seg 已加载 | 等待相机帧')
 
     def callback(self, msg):

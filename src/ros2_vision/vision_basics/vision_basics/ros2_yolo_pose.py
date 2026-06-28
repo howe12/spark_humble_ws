@@ -42,7 +42,7 @@ class YoloPoseNode(Node):
 
         # Spark D435 彩色图像话题
         self.sub = self.create_subscription(
-            Image, '/camera/camera/color/image_raw', self.callback, 10)
+            Image, '/camera/color/image_raw', self.callback, 10)
         self.get_logger().info(f'YOLOv8n-pose 已加载 | 等待 D435 相机帧')
 
     def callback(self, msg):

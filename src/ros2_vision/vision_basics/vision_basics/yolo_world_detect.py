@@ -72,7 +72,7 @@ def main():
         print('  未检测到目标')
 
     annotated = r.plot()
-    cv2.imshow('YOLO-World — 开放词汇检测', annotated)
+    cv2.imshow('YOLO-World — Open-Vocabulary Detection', annotated)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 

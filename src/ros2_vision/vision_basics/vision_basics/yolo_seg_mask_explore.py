@@ -174,9 +174,9 @@ for i, (panel, label) in enumerate(zip(panels, labels)):
     cv2.putText(grid, label, (x1 + 5, y1 + 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
 
-cv2.namedWindow('Mask 数据探索 — 按任意键退出', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('Mask 数据探索 — 按任意键退出', 900, 600)
-cv2.imshow('Mask 数据探索 — 按任意键退出', grid)
+cv2.namedWindow('Mask Data Explorer — press any key', cv2.WINDOW_NORMAL)
+cv2.resizeWindow('Mask Data Explorer — press any key', 900, 600)
+cv2.imshow('Mask Data Explorer — press any key', grid)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 

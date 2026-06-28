@@ -78,7 +78,7 @@ class YOLOWorldNode(Node):
 
         cv2.putText(annotated, f'YOLO-World FPS: {self.fps_value:.1f}',
                     (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.imshow('YOLO-World — ROS2 动态类别', annotated)
+        cv2.imshow('YOLO-World — ROS2 Dynamic Classes', annotated)
         cv2.waitKey(1)
 
     def destroy(self):

@@ -64,7 +64,7 @@ def main():
     cv2.putText(result, f'SAM: {len(masks)} regions', (img.shape[1] + 5, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
-    cv2.imshow('SAM Auto Segment Everything — 按任意键退出', result)
+    cv2.imshow('SAM Auto Segment Everything — press any key', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
