@@ -27,3 +27,8 @@ log
 src/spark_app/spark_yolov8/model/sam_b.pt
 src/spark_app/spark_yolov8/model/yolov8s-world.pt
 src/ros2_vision/vision_basics/model/*.pt
+
+# ml_basics outputs
+src/ml_basics/models/*.pth
+src/ml_basics/models/*.pkl
+src/ml_basics/data/

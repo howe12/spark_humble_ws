@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""1.2 数据分析 — ROS2 IMU 实时轨迹跟踪
+"""1.2 数据分析 — ROS2 IMU 实时轨迹跟踪 (matplotlib 版)
 
-订阅 /imu_data → 欧拉法航迹推算 → 发布轨迹 (Path) + 可视化
+订阅 /imu_data → 欧拉法航迹推算 → 发布轨迹 (Path) + 实时 matplotlib 窗口
 
-ROS1 → ROS2 适配要点:
-  - rospy.Subscriber → rclpy Node.create_subscription
-  - rospy.Time.now() → node.get_clock().now()
-  - nav_msgs/Path 发布实时轨迹
-  - 增加轨迹重置服务 (方便多次实验)
+窗口显示:
+  - 蓝色实线 = IMU 推算的 2D 轨迹 (X-Y 俯视图)
+  - 红色圆点 = 当前位置
+  - 标题 = 实时位置坐标
 
 用法:
   ros2 run ml_basics ros2_imu_tracker
@@ -20,6 +19,14 @@ from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
 import numpy as np
 import math
+
+# ── matplotlib 初始化 (自动设置 DISPLAY) ──
+import os as _os
+_os.environ.setdefault('DISPLAY', ':0')
+import matplotlib
+matplotlib.use('TkAgg')
+_os = None
+import matplotlib.pyplot as plt
 
 
 class IMUTrackerNode(Node):
@@ -47,6 +54,25 @@ class IMUTrackerNode(Node):
         self.imu_sub = self.create_subscription(
             Imu, '/imu_data', self.imu_callback, 10)
         self.path_pub = self.create_publisher(Path, '/imu_trajectory', 10)
+
+        # ── matplotlib 窗口 ──
+        self.fig, self.ax = plt.subplots(figsize=(8, 8))
+        self.fig.canvas.manager.set_window_title('IMU Trajectory (Dead Reckoning)')
+        self.ax.set_xlabel('X (m)')
+        self.ax.set_ylabel('Y (m)')
+        self.ax.set_title('Position: (0.00, 0.00)')
+        self.ax.grid(True, alpha=0.3)
+        self.ax.axhline(y=0, color='gray', linewidth=0.5)
+        self.ax.axvline(x=0, color='gray', linewidth=0.5)
+        self.ax.set_aspect('equal')
+
+        (self.line_traj,) = self.ax.plot([], [], 'b-', linewidth=0.8, label='IMU trajectory')
+        (self.dot_pos,)   = self.ax.plot([], [], 'ro', markersize=6, label='Current')
+
+        self.ax.legend(fontsize=8, loc='upper right')
+
+        plt.ion()
+        self.fig.show()
 
         self.get_logger().info('IMU 轨迹跟踪已启动 | 等待 /imu_data ...')
 
@@ -111,21 +137,55 @@ class IMUTrackerNode(Node):
 
         self.path_pub.publish(path_msg)
 
+        # 更新 matplotlib — 每 5 帧刷新一次，避免高频 IMU 卡顿
+        if len(self.trajectory) % 5 == 0:
+            self._update_plot()
+
         # 每 100 帧打印一次
         if len(self.trajectory) % 100 == 0:
             self.get_logger().info(
                 f'位置: ({self.p[0]:.2f}, {self.p[1]:.2f}) | '
                 f'轨迹点数: {len(self.trajectory)}')
 
+    def _update_plot(self):
+        if len(self.trajectory) < 2:
+            return
+
+        traj = np.array(self.trajectory)
+        xs = traj[:, 0]
+        ys = traj[:, 1]
+
+        self.line_traj.set_data(xs, ys)
+        self.dot_pos.set_data([xs[-1]], [ys[-1]])
+
+        # 自适应坐标轴范围
+        x_margin = max(0.5, (xs.max() - xs.min()) * 0.15)
+        y_margin = max(0.5, (ys.max() - ys.min()) * 0.15)
+        self.ax.set_xlim(xs.min() - x_margin, xs.max() + x_margin)
+        self.ax.set_ylim(ys.min() - y_margin, ys.max() + y_margin)
+
+        self.ax.set_title(f'Position: ({self.p[0]:.2f}, {self.p[1]:.2f}, {self.p[2]:.2f})')
+
+        try:
+            self.fig.canvas.draw_idle()
+            self.fig.canvas.flush_events()
+        except Exception:
+            pass
+
 
 def main():
     rclpy.init()
     node = IMUTrackerNode()
     try:
-        rclpy.spin(node)
+        while rclpy.ok():
+            rclpy.spin_once(node, timeout_sec=0.01)
+            plt.pause(0.01)
+            if not plt.fignum_exists(node.fig.number):
+                break
     except KeyboardInterrupt:
         pass
     finally:
+        plt.close('all')
         node.destroy_node()
         rclpy.shutdown()
 

@@ -103,7 +103,17 @@ def main():
         # 统一高度后并排
         h = max(p.shape[0] for p in panels)
         resized = [cv2.resize(p, (int(p.shape[1] * h / p.shape[0]), h)) for p in panels]
-        comparison = np.hstack(resized)
+        comparison = np.hstack(resized).copy()  # .copy() 确保内存连续
+        
+        print(f'对比图: shape={comparison.shape}, dtype={comparison.dtype}, '
+              f'min={comparison.min()}, max={comparison.max()}, mean={comparison.mean():.0f}')
+        
+        # 保存验证
+        out = os.path.join(os.path.dirname(__file__), 'rtdetr_vs_result.png')
+        cv2.imwrite(out, comparison)
+        print(f'已保存: {out}')
+        
+        cv2.namedWindow('RT-DETR (L) vs YOLOv8 (R) — press any key', cv2.WINDOW_NORMAL)
         cv2.imshow('RT-DETR (L) vs YOLOv8 (R) — press any key', comparison)
         print('\n窗口已打开，按任意键退出...')
         cv2.waitKey(0)
