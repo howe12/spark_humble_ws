@@ -32,3 +32,7 @@ src/ros2_vision/vision_basics/model/*.pt
 src/ml_basics/models/*.pth
 src/ml_basics/models/*.pkl
 src/ml_basics/data/
+
+# Large binary files (exclude from git)
+src/code.zip
+src/ros2_vision/vision_basics/pictures/dance.mp4
