@@ -19,6 +19,9 @@ setup(
             'model/sam_b.pt',
             'model/rtdetr-l.pt',
         ]),
+        ('share/' + package_name + '/launch', [
+            'launch/depth_follow.launch.py',
+        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -57,9 +60,11 @@ setup(
             'ros2_yolo_pose = vision_basics.ros2_yolo_pose:main',
             'ros2_pose_action = vision_basics.ros2_pose_action:main',
             'ros2_rtdetr = vision_basics.ros2_rtdetr:main',
+            'ros2_hybrid = vision_basics.ros2_hybrid:main',
             'ros2_yolo_world = vision_basics.ros2_yolo_world:main',
             'ros2_depth_follow = vision_basics.ros2_depth_follow:main',
             'depth_follow_tuner = vision_basics.depth_follow_tuner:main',
+            'following_control_node = vision_basics.following_control_node:main',
         ],
     },
 )
