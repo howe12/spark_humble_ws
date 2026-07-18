@@ -11,7 +11,6 @@
 用法:
   ros2 run ml_basics ros2_cnn_detect
 
-参考: 飞书文档 4.4.2 camera_cnn.py (ROS1 → ROS2)
 """
 
 import rclpy
