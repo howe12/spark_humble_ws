@@ -1,303 +1,317 @@
 <title>03-2 基于深度信息的目标跟随（Spark 实践复现）</title>
 
 <callout emoji="🎯" background-color="light-green" border-color="green">
-  <p><b>复现目标：</b>基于参考版 X3qRdYfoco4XwcxI6Hkc4pXuneb（2749 行），分析 13 个课程程序，创建 2 个新程序 + 复用 5 个已有程序，在 Spark 机器人上跑通 P→PID→安全限幅三步递进跟随。</p>
+  <p><b>复现目标：</b>对照参考版 X3qRdYfoco4XwcxI6Hkc4pXuneb 全部 10 个章节，分析每个章节的程序、运行方式、课程修改方案。创建 2 个新程序 + 复用 5 个已有程序，在 Spark 机器人上跑通 P→PID→安全限幅三步递进跟随。</p>
 </callout>
 
-<h2>📝 课程修改指引（逐章对照）</h2>
+<h2>📝 逐章对照总表（全覆盖）</h2>
 
-<p>以下标注参考版 X3qRdYfoco4XwcxI6Hkc4pXuneb 每个章节应如何修改，以适配实践版程序。</p>
+<p>以下覆盖参考版全部 10 个 H3 章节。每个章节标注「课程做了什么」「实践版怎么做」「运行方式」「课程如何修改」。</p>
 
 <table>
-  <colgroup><col width="60"/><col width="180"/><col width="100"/><col width="120"/><col width="180"/></colgroup>
+  <colgroup><col width="40"/><col width="120"/><col width="100"/><col width="140"/><col width="100"/><col width="150"/></colgroup>
   <thead>
-    <tr><th background-color="light-gray">章节</th><th background-color="light-gray">参考版内容</th><th background-color="light-gray">操作</th><th background-color="light-gray">实践版程序</th><th background-color="light-gray">修改说明</th></tr>
+    <tr><th background-color="light-gray">章节</th><th background-color="light-gray">参考版内容</th><th background-color="light-gray">有无程序</th><th background-color="light-gray">实践版做法</th><th background-color="light-gray">运行方式</th><th background-color="light-gray">课程修改</th></tr>
   </thead>
   <tbody>
-    <tr><td>§2.4</td><td>深度信息滤波<br/>（median / bilateral / inpainting）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py<br/>depth_follow_tuner.py</td><td>删除三个像素级滤波函数及其代码块。替换为：「实践版在点云上用 <b>PCL passthrough</b> 做直通滤波 + <b>PCL voxel</b> 做体素降采样，比深度图逐像素滤波更快更稳定。详见 depth_follow_centroid.py。」</td></tr>
-    <tr><td>§3.1</td><td>RGB-D 融合<br/>（yolo_detection_example）</td><td><span text-color="red">替换</span></td><td>following_utils.py</td><td>删除 YOLO+深度融合的示例代码。替换为：「实践版深度跟随用 <b>3D ROI 直接分割</b>，比 YOLO+bbox 延迟更低。YOLO 目标检测属 04-1 章节内容，此处不重复。深度融合工具函数已整合到 following_utils.py。」</td></tr>
-    <tr><td>§4.1</td><td>基于边界框的深度估计<br/>（mean / median / pointcloud）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py</td><td>删除三种 3D 定位方法的独立函数。替换为：「实践版统一使用<b>点云质心法</b>——对 ROI 内所有点求均值得到 (cx, cy, cz)，比 bbox 均值/中值法更鲁棒。详见 depth_follow_centroid.py。」</td></tr>
-    <tr><td>§4.2</td><td>深度滤波与时序平滑</td><td><span text-color="red">替换</span></td><td>following_utils.py<br/>（DepthFilter / KalmanDepthFilter）</td><td>保留时序平滑的概念讲解，将代码替换为：「实践版提供 EMA 滤波器和 Kalman 滤波器两种实现，位于 following_utils.py 的 DepthFilter 和 KalmanDepthFilter 类。」</td></tr>
-    <tr><td>§5.2</td><td>纯距离跟随（Bang-Bang）</td><td><span text-color="gray">保留</span></td><td>—</td><td>保留作为对照。添加 callout：「实践版将比例控制作为 following_controller.py 的第1步，与 Bang-Bang 形成对比——比例控制比开关控制更平滑。」</td></tr>
-    <tr><td>§5.3</td><td>PID 控制跟随<br/>（P → PIDController → FollowingController → ObjectFollowingController）</td><td><span text-color="red">重写</span></td><td>following_controller.py</td><td><b>本章整节重写。</b>删除 4 个独立类的代码，替换为：「实践版将四个控制器合并为 <b>following_controller.py</b>——三层递进（Simple → PID → Object），每步继承上一步参数。纯 Python 可自测，无需 ROS/相机。详见下文『程序 1』。」</td></tr>
-    <tr><td>§6</td><td>多目标场景处理</td><td><span text-color="gray">保留概念</span></td><td>following_controller.py<br/>（ObjectFollowingController）</td><td>保留目标选择策略的理论讲解。将代码替换为：「实践版的 closest-first 策略实现在 ObjectFollowingController.compute() 中——遍历所有目标选距离最近者，返回 target_idx。」</td></tr>
-    <tr><td>§7.1</td><td>深度目标检测与定位（OpenCV+PCL）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py<br/>ros2_depth_follow.py</td><td>删除原代码块。替换为：「实践版提供两个版本——<b>depth_follow_centroid.py</b>（纯数值演示）和 <b>ros2_depth_follow.py</b>（ROS2 实时节点，3D ROI + 比例控制 + 死区 + 丢帧保护）。」</td></tr>
-    <tr><td>§7.2</td><td>跟随控制器代码（OpenCV+PCL）</td><td><span text-color="red">替换</span></td><td>following_controller.py</td><td>删除原代码块。替换为：「实践版使用 <b>following_controller.py</b>（P→PID→Object 三步递进），已在上文 §5.3 详细说明。」</td></tr>
-    <tr><td>§8.2</td><td>ROS2 跟随控制节点实现</td><td><span text-color="red">替换</span></td><td>following_control_node.py</td><td>删除原代码块。替换为：「实践版 <b>following_control_node.py</b> 整合 YOLO 检测链路 + PID 控制。关键安全设计：<b>enable_following 默认 False</b>，必须手动 ros2 param set 启用。无目标时自动减速停止。」</td></tr>
-    <tr><td>§8.3</td><td>launch 文件</td><td><span text-color="red">替换</span></td><td>depth_follow.launch.py</td><td>删除原 launch 代码。替换为：「实践版 <b>depth_follow.launch.py</b> 提供 7 个 ROS2 可调参数，一键启动相机+跟随节点。详见下文『程序 2』。」</td></tr>
-    <tr><td>§10</td><td>练习题（pixel_and_depth_to_3d / test_simple_controller）</td><td><span text-color="red">替换</span></td><td>following_utils.py<br/>following_controller.py</td><td>删除原练习题代码。替换为：「像素反投影函数已内置在 following_utils.py 的 pixel_and_depth_to_3d()。控制器测试已融入 following_controller.py 的 demo() 自测函数——四种场景自动验证。」</td></tr>
+
+    <!-- §1 概述 -->
+    <tr><td rowspan="3">§1<br/>目标跟随概述</td>
+    <td>什么是目标跟随</td><td>—</td><td>保留理论</td><td>—</td><td><span text-color="gray">不修改</span></td></tr>
+    <tr><td>应用场景（机器人/无人机/自动驾驶）</td><td>—</td><td>保留理论</td><td>—</td><td><span text-color="gray">不修改</span></td></tr>
+    <tr><td>技术框架</td><td>—</td><td>在框架图后添加：「<b>实践版在 Spark (D435+底盘) 上实现了蓝色链路（点云质心）和红色链路（YOLO+PID）两套方案。</b>」</td><td>—</td><td><span text-color="gray">追加一段</span></td></tr>
+
+    <!-- §2 深度信息获取与处理 -->
+    <tr><td rowspan="4">§2<br/>深度信息获取与处理</td>
+    <td>§2.1.1 RGB-D 相机获取<br/><code>get_depth_from_rgbd()</code></td><td><b>有</b></td>
+    <td>保留理论。代码替换为：D435 通过 <code>/camera/aligned_depth_to_color/image_raw</code> 话题获取对齐深度图，<b>不需要自己写函数提取</b>——ROS2 已对齐。</td>
+    <td><code>ros2 topic echo /camera/aligned_depth_to_color/image_raw</code></td>
+    <td><span text-color="red">替换代码</span>。删除 Python 函数，改为：「ROS2 中订阅对齐深度话题即可，无需手动 get_depth_from_rgbd。」</td></tr>
+
+    <tr><td>§2.1.2 双目立体视觉<br/><code>disparity_to_depth()</code></td><td><b>有</b></td>
+    <td>保留理论。添加 callout：<b>D435 内部已做双目匹配</b>——直接输出深度图，不需要 disparity_to_depth 转换。但学生应理解 <code>Z = f×B/d</code> 公式。</td>
+    <td>—</td>
+    <td><span text-color="gray">保留概念+代码</span>。添加 callout 说明 D435 的差异。</td></tr>
+
+    <tr><td>§2.1.3 单目深度估计<br/><code>monocular_depth_estimation_example()</code></td><td><b>有</b></td>
+    <td>保留理论。添加：「实践版不涉及单目深度——Spark 用 D435 硬件深度。如需单目，参考 MiDaS 模型。」</td>
+    <td>—</td>
+    <td><span text-color="gray">保留</span>。末尾加一句实践版说明。</td></tr>
+
+    <tr><td>§2.4 深度信息滤波<br/><code>median/bilateral/inpainting</code></td><td><b>有（3个函数）</b></td>
+    <td><span background-color="light-green">实践版用 PCL passthrough+voxel 替代像素滤波。</span></td>
+    <td><code>python3 depth_follow_centroid.py</code><br/>（演示点云滤波效果）</td>
+    <td><span text-color="red">替换代码</span>。删除 3 个滤波函数，替换为：「实践版在点云上滤波——PCL passthrough 做直通，PCL voxel 做降采样。比深度图逐像素滤波更快。详见 depth_follow_centroid.py。」</td></tr>
+
+    <!-- §3 目标检测与深度融合 -->
+    <tr><td rowspan="2">§3<br/>目标检测与深度融合</td>
+    <td>§3.1 RGB-D 融合<br/><code>get_target_3d_from_bbox/median/pointcloud</code></td><td><b>有（3个函数）</b></td>
+    <td><span background-color="light-green">实践版用 centroid.py 的点云质心法统一替代。</span></td>
+    <td><code>python3 depth_follow_centroid.py</code></td>
+    <td><span text-color="red">替换代码</span>。删除 3 个定位函数，替换为：「实践版统一使用点云质心法——对 ROI 内所有点求均值。比 bbox 采样更鲁棒。」</td></tr>
+
+    <tr><td>§3.2 目标检测器<br/><code>yolo_detection_example()</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">深度跟随用 3D ROI 直接分割，YOLO 属 04-1。</span></td>
+    <td><code>ros2 run vision_basics following_control_node</code><br/>（YOLO 检测链路版本）</td>
+    <td><span text-color="red">替换</span>。删除代码，替换为：「实践版深度跟随用 3D ROI 替代 YOLO。如需 YOLO 检测链路，见 following_control_node.py（属 04-1 范围）。」</td></tr>
+
+    <!-- §4 目标距离估算 -->
+    <tr><td rowspan="3">§4<br/>目标距离估算</td>
+    <td>§4.1 边界框深度估计<br/><code>estimate_depth_from_bbox_size()</code></td><td><b>有</b></td>
+    <td>保留理论。<b>不代入实践版</b>——bbox 尺寸估计不可靠（目标远近/朝向变化）。</td>
+    <td>—</td>
+    <td><span text-color="gray">保留概念</span>。末尾加 callout：「此方法仅作教学参考，实践版用点云质心法。」</td></tr>
+
+    <tr><td>§4.2 深度滤波与时序平滑<br/><code>DepthFilter / KalmanDepthFilter</code></td><td><b>有（2个类）</b></td>
+    <td><span background-color="light-green">保留概念，代码指向 following_utils.py。</span></td>
+    <td><code>python3.10 following_utils.py</code><br/>（7 项自测，含滤波对比）</td>
+    <td><span text-color="red">替换代码</span>。删除两个类的代码，替换为：「实践版实现位于 following_utils.py——DepthFilter(EMA) 和 KalmanDepthFilter。运行自测看滤波曲线对比。」</td></tr>
+
+    <tr><td>§4.3 跟随坐标系与误差<br/><code>compute_following_errors()</code></td><td><b>有</b></td>
+    <td>保留理论。函数已内置在 following_utils.py。</td>
+    <td><code>python3.10 -c "from vision_basics.following_utils import compute_following_errors; help(compute_following_errors)"</code></td>
+    <td><span text-color="gray">保留概念</span>。代码指向 following_utils.py。</td></tr>
+
+    <!-- §5 跟随控制策略 -->
+    <tr><td rowspan="4">§5<br/>跟随控制策略</td>
+    <td>§5.1 跟随坐标系与误差</td><td>—</td><td>保留理论</td><td>—</td><td><span text-color="gray">不修改</span></td></tr>
+
+    <tr><td>§5.2 纯距离跟随<br/><code>bangbang_controller()</code></td><td><b>有</b></td>
+    <td>保留作为对照。在课程中加一句：「实践版的比例控制（following_controller.py 第1步）比 Bang-Bang 更平滑。」</td>
+    <td>—</td>
+    <td><span text-color="gray">保留代码</span>。末尾加一句对比。</td></tr>
+
+    <tr><td>§5.3 PID 控制跟随<br/><code>PIDController / FollowingController</code></td><td><b>有（2个类）</b></td>
+    <td><b>本章整节重写。</b>删除 4 个独立类的代码，替换为 following_controller.py 三步递进。</td>
+    <td><code>python3 following_controller.py</code></td>
+    <td><span text-color="red"><b>重写整节</b></span>。见下文「程序 1」完整设计+代码+注释+运行方式。</td></tr>
+
+    <tr><td>§5.4 基于视觉的跟随策略<br/><code>visual_following_strategy_overview()</code></td><td><b>有</b></td>
+    <td>保留理论。不涉及具体程序。</td>
+    <td>—</td>
+    <td><span text-color="gray">不修改</span></td></tr>
+
+    <!-- §6 多目标场景 -->
+    <tr><td rowspan="2">§6<br/>多目标场景</td>
+    <td>§6.1 目标选择策略<br/><code>select_target_by_strategy()</code></td><td><b>有</b></td>
+    <td>保留理论。代码指向 following_utils.py（select_target_by_strategy 已内置）。</td>
+    <td><code>python3.10 following_utils.py</code></td>
+    <td><span text-color="gray">保留概念</span>。代码替换为 following_utils.py 引用。</td></tr>
+
+    <tr><td>§6.2 目标跟踪<br/><code>SimpleTargetTracker</code></td><td><b>有</b></td>
+    <td>保留概念。代码指向 following_utils.py（SimpleTargetTracker 已内置）。</td>
+    <td><code>python3.10 following_utils.py</code></td>
+    <td><span text-color="gray">保留概念</span>。代码替换为 following_utils.py 引用。</td></tr>
+
+    <!-- §7 OpenCV+PCL -->
+    <tr><td rowspan="2">§7<br/>OpenCV+PCL实践</td>
+    <td>§7.1 深度目标检测与定位<br/><code>DepthObjectDetector</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">替换为 centroid + tuner 两个程序。</span></td>
+    <td><code>python3 depth_follow_centroid.py</code><br/><code>python3 depth_follow_tuner.py</code></td>
+    <td><span text-color="red">替换代码</span>。见下文「复用程序」。</td></tr>
+
+    <tr><td>§7.2 跟随控制器代码<br/><code>PIDControllerSingleVar</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">替换为 following_controller.py（三步递进）。</span></td>
+    <td><code>python3 following_controller.py</code></td>
+    <td><span text-color="red">替换代码</span>。见下文「程序 1」。</td></tr>
+
+    <!-- §8 ROS2 -->
+    <tr><td rowspan="3">§8<br/>ROS2 节点实现</td>
+    <td>§8.1 整体架构</td><td>—</td><td>保留。在架构图后添加：「实践版两条链路——点云质心（ros2_depth_follow.py）和 YOLO+PID（following_control_node.py）。」</td>
+    <td>—</td>
+    <td><span text-color="gray">追加一段</span></td></tr>
+
+    <tr><td>§8.2 跟随控制节点<br/><code>FollowingControlNode</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">替换为 following_control_node.py。</span></td>
+    <td><code>ros2 run vision_basics following_control_node</code></td>
+    <td><span text-color="red">替换代码</span>。见下文「复用程序」。</td></tr>
+
+    <tr><td>§8.3 launch 文件<br/><code>following_system.launch.py</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">替换为 depth_follow.launch.py（7 参数）。</span></td>
+    <td><code>ros2 launch vision_basics depth_follow.launch.py</code></td>
+    <td><span text-color="red">替换代码</span>。见下文「程序 2」。</td></tr>
+
+    <!-- §9 小结 -->
+    <tr><td>§9<br/>本章小结</td><td>总结</td><td>—</td><td>保留。末尾追加实践版 7 个程序清单。</td><td>—</td><td><span text-color="gray">追加程序清单</span></td></tr>
+
+    <!-- §10 练习题 -->
+    <tr><td>§10<br/>练习题</td>
+    <td><code>pixel_and_depth_to_3d()</code><br/><code>test_simple_controller()</code></td><td><b>有（2题）</b></td>
+    <td>保留题目。答案指向实践版：<br/>第1题 → following_utils.py 的 pixel_and_depth_to_3d()<br/>第2题 → following_controller.py 的 demo()</td>
+    <td><code>python3 following_controller.py</code><br/><code>python3.10 following_utils.py</code></td>
+    <td><span text-color="red">替换答案代码</span></td></tr>
+
   </tbody>
 </table>
 
 <callout emoji="📖" background-color="light-blue" border-color="blue">
-  <p><b>修改原则：</b>参考版共 11 个 H3/H4 章节。其中 <b>3 个保留概念</b>（§5.2/§6/§8.1），<b>8 个需要替换或重写代码</b>。每个替换都有明确的实践版程序对应，不是删除——是升级。</p>
+  <p><b>统计：</b>参考版共 10 章，内含 <b>20 个函数/类</b>。其中 <b>4 个保留概念</b>（纯理论），<b>8 个保留概念但代码指向实践版文件</b>，<b>8 个替换或重写代码</b>。</p>
 </callout>
 
-<h2>📊 程序总览</h2>
-
-<p>参考版共 13 个程序/函数。创建 <b>2 个新程序</b>，复用 <b>5 个已有程序</b>，跳过 <b>11 个</b>（工程有更优替代方案）。</p>
-
-<h3>创建的 2 个新程序</h3>
+<h2>📊 程序总览（7 个程序）</h2>
 
 <table>
-  <colgroup><col width="200"/><col width="140"/><col width="140"/><col width="180"/></colgroup>
+  <colgroup><col width="200"/><col width="80"/><col width="160"/><col width="160"/></colgroup>
   <thead>
     <tr>
       <th background-color="light-green">程序</th>
-      <th background-color="light-green">设计思想</th>
-      <th background-color="light-green">课程假设</th>
-      <th background-color="light-green">实际优化</th>
+      <th background-color="light-green">状态</th>
+      <th background-color="light-green">对应参考版章节</th>
+      <th background-color="light-green">运行方式</th>
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td><b>following_controller.py</b></td>
-      <td>将课程中 4 个独立控制器类合并为三层递进，每步继承上一步参数，学生只需改参数不需重写类</td>
-      <td>P→PIDController→FollowingController→ObjectFollowingController 四层独立</td>
-      <td><span background-color="light-green">三层合一，安全限幅（v≥0）+ 后退保护内置，可直接嵌入 ROS2 节点</span></td>
-    </tr>
-    <tr>
-      <td><b>depth_follow.launch.py</b></td>
-      <td>对应参考版 following_system.launch.py，7 个 ROS2 参数一键启动</td>
-      <td>无（参考版无此文件）</td>
-      <td><span background-color="light-green">统一相机+跟随节点启动，参数化控制</span></td>
-    </tr>
+    <tr><td><b>following_controller.py</b></td><td>新</td><td>§5.3 + §7.2 + §10</td><td><code>python3 following_controller.py</code></td></tr>
+    <tr><td><b>depth_follow.launch.py</b></td><td>新</td><td>§8.3</td><td><code>ros2 launch vision_basics depth_follow.launch.py</code></td></tr>
+    <tr><td>following_utils.py</td><td>复用</td><td>§3.1 + §4.2 + §4.3 + §6.1 + §6.2</td><td><code>python3.10 following_utils.py</code></td></tr>
+    <tr><td>following_control_node.py</td><td>复用</td><td>§3.2 + §8.2</td><td><code>ros2 run vision_basics following_control_node</code></td></tr>
+    <tr><td>depth_follow_centroid.py</td><td>复用</td><td>§2.4 + §3.1 + §7.1</td><td><code>python3 depth_follow_centroid.py</code></td></tr>
+    <tr><td>ros2_depth_follow.py</td><td>复用</td><td>§7.1 + §8.1</td><td><code>ros2 run vision_basics ros2_depth_follow</code></td></tr>
+    <tr><td>depth_follow_tuner.py</td><td>复用</td><td>§7.1</td><td><code>python3 depth_follow_tuner.py</code></td></tr>
   </tbody>
 </table>
 
-<h3>复用的 5 个已有程序</h3>
-
-<table>
-  <colgroup><col width="200"/><col width="100"/><col width="200"/><col width="160"/></colgroup>
-  <thead>
-    <tr><th background-color="light-gray">程序</th><th background-color="light-gray">类型</th><th background-color="light-gray">功能</th><th background-color="light-gray">运行方式</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>following_utils.py</td><td>纯Python模块</td><td>30+ 内联函数整合为 8 模块工具集，7 项自测通过</td><td><code>python3.10 following_utils.py</code></td></tr>
-    <tr><td>following_control_node.py</td><td>ROS2 节点</td><td>YOLO检测链路 + PID控制, enable_following 默认 False</td><td><code>ros2 run vision_basics following_control_node</code></td></tr>
-    <tr><td>depth_follow_centroid.py</td><td>纯Python演示</td><td>点云质心跟踪算法，PCL passthrough+voxel 替代像素滤波</td><td><code>python3 depth_follow_centroid.py</code></td></tr>
-    <tr><td>ros2_depth_follow.py</td><td>ROS2 节点</td><td>3D ROI 质心 + 比例控制 + 死区 + 丢帧保护</td><td><code>ros2 run vision_basics ros2_depth_follow</code></td></tr>
-    <tr><td>depth_follow_tuner.py</td><td>调参工具</td><td>OpenCV 滑块实时调 ROI 参数，即时看过滤效果</td><td><code>python3 depth_follow_tuner.py</code></td></tr>
-  </tbody>
-</table>
-
-<h3>跳过的 11 个参考版程序</h3>
-
-<table>
-  <colgroup><col width="200"/><col width="140"/><col width="140"/><col width="180"/></colgroup>
-  <thead>
-    <tr><th background-color="light-gray">参考版程序</th><th background-color="light-gray">课程目的</th><th background-color="light-gray">跳过原因</th><th background-color="light-gray">替代方案</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>depth_median_filter()</td><td>像素级中值滤波</td><td>深度图滤波效率低</td><td>PCL passthrough 直通滤波</td></tr>
-    <tr><td>depth_bilateral_filter()</td><td>双边滤波原理</td><td>点云上不需要逐像素</td><td>PCL voxel 降采样</td></tr>
-    <tr><td>depth_inpainting()</td><td>深度空洞填充</td><td>D435 硬件已做填充</td><td>直接跳过</td></tr>
-    <tr><td>get_target_3d_from_bbox()</td><td>均值深度法</td><td>单 bbox 不稳定</td><td>centroid.py 点云质心</td></tr>
-    <tr><td>get_target_3d_with_median()</td><td>中值深度法</td><td>与质心法相当</td><td>centroid 已覆盖</td></tr>
-    <tr><td>get_target_3d_pointcloud()</td><td>点云质心法</td><td>centroid.py 已实现</td><td>已有最优方法</td></tr>
-    <tr><td>yolo_detection_example()</td><td>检测+跟随组合</td><td>YOLO 属 04-1</td><td>3D ROI 更快</td></tr>
-    <tr><td>SimpleFollowingController</td><td>P 控制教学</td><td>已融入新程序</td><td>following_controller.py 第1步</td></tr>
-    <tr><td>PIDController (独立类)</td><td>PID 教学</td><td>已融入新程序</td><td>following_controller.py 第2步</td></tr>
-    <tr><td>FollowingControlNode</td><td>ROS2 节点</td><td>已有 2 个节点</td><td>following_control_node + ros2_depth_follow</td></tr>
-    <tr><td>pixel_and_depth_to_3d()</td><td>练习题</td><td>非核心</td><td>内置在 following_utils.py</td></tr>
-  </tbody>
-</table>
-
-<callout emoji="📖" background-color="light-green" border-color="green">
-  <p><b>核心原则：</b>不是「写不出来」——是「工程上有更好的替代方案」。每个跳过程序都有明确的理由和替代方案，不创建冗余代码。</p>
-</callout>
-
-<h2>📖 程序 1：following_controller.py — 设计思想</h2>
+<h2>📖 程序 1：following_controller.py（新）</h2>
 
 <callout emoji="💡" background-color="light-yellow" border-color="yellow">
-  <p><b>设计目标：</b>将课程中分散在 4 个独立类中的控制律，合并为单一递进式教学程序。纯 Python，无需 ROS/相机/底盘即可自测验证。学生按顺序跑三步，逐行对比输出差异。</p>
+  <p><b>设计目标：</b>替代参考版 §5.3 的 4 个独立控制器类。三层递进（P→PID→Object），每步继承上一步参数。纯 Python 可自测。</p>
 </callout>
 
-<h3>代码结构</h3>
-
-<pre lang="python" caption="following_controller.py 结构"><code># 第1步：SimpleFollowingController — P 比例控制
-#   控制律：v = Kp×(当前距离−期望距离)，ω = Kp×偏航角
-#   问题：到达期望距离后 v→0，但无积分项消除稳态误差
-
-# 第2步：PIDFollowingController — 消除稳态误差
-#   改进：距离通道升级为 PID（Kp=0.5, Ki=0.1, Kd=0.05）
-#   新增：积分累积消残差 + 微分阻尼抑超调
-
-# 第3步：ObjectFollowingController — 多目标 + 安全限幅
-#   新增：closest-first 多目标选最近
-#   新增：distance &lt; 0.5m 自动停转
-#   新增：后退保护 v ≥ 0（不准后退）
-#   输出：(v, w, target_idx) 三元组
-
-# demo() — 自测函数，四种场景验证三个控制器</code></pre>
-
-<h3>关键设计决策</h3>
+<h3>设计思想</h3>
 
 <table>
   <colgroup><col width="160"/><col width="240"/><col width="240"/></colgroup>
-  <thead>
-    <tr><th background-color="light-gray">决策点</th><th background-color="light-gray">课程做法</th><th background-color="light-gray">实践做法</th></tr>
-  </thead>
+  <thead><tr><th background-color="light-gray">决策</th><th background-color="light-gray">参考版</th><th background-color="light-gray">实践版</th></tr></thead>
   <tbody>
-    <tr><td><b>控制器数量</b></td><td>4 个独立类（P / PID / Following / ObjectFollowing）</td><td><span background-color="light-green">3 个递进类，每步继承上一步参数</span></td></tr>
-    <tr><td><b>后退行为</b></td><td>允许负速度（v &lt; 0 后退）</td><td><span background-color="light-green">v ≥ 0 安全限幅，禁止后退</span></td></tr>
-    <tr><td><b>过近处理</b></td><td>无安全距离判断</td><td><span background-color="light-green">min_safe=0.5m，过近自动停转</span></td></tr>
-    <tr><td><b>多目标</b></td><td>每次处理一个目标</td><td><span background-color="light-green">closest-first 选最近，返回 target_idx</span></td></tr>
-    <tr><td><b>可嵌入性</b></td><td>需自行组装控制器+ROS2 节点</td><td><span background-color="light-green">import 后直接 compute()，立即嵌入 ROS2</span></td></tr>
+    <tr><td>控制器数量</td><td>4 个独立类</td><td><span background-color="light-green">3 个递进类（参数继承）</span></td></tr>
+    <tr><td>后退行为</td><td>允许 v&lt;0 后退</td><td><span background-color="light-green">v≥0 禁止后退</span></td></tr>
+    <tr><td>过近处理</td><td>无安全判断</td><td><span background-color="light-green">min_safe=0.5m 自动停转</span></td></tr>
+    <tr><td>多目标</td><td>单目标处理</td><td><span background-color="light-green">closest-first + 返回 target_idx</span></td></tr>
+    <tr><td>嵌入方式</td><td>需自行组装</td><td><span background-color="light-green">import + compute() 即用</span></td></tr>
   </tbody>
 </table>
 
-<h3>🔬 实操步骤</h3>
+<h3>代码结构（带注释）</h3>
 
-<callout emoji="🧪" background-color="light-gray" border-color="gray">
-  <p><b>环境要求：</b>纯 Python，无需 ROS/相机/底盘。任何有 Python 3 的终端即可运行。</p>
+<pre lang="python" caption="following_controller.py 结构"><code>#!/usr/bin/env python3
+"""03-2 跟随控制器: P → PID → 多目标安全跟随（教学版）
+
+三步递进，每步可独立运行验证。纯 Python，无需 ROS/相机/底盘。
+用法: python3 following_controller.py
+"""
+
+# ═══ 第1步: P 比例控制 ═══
+class SimpleFollowingController:
+    """控制律: v=Kp*(d-desired), ω=Kp*yaw
+       问题: 到达期望距离后 v→0，无积分消除稳态误差"""
+    def compute(self, target_3d): ...
+
+# ═══ 第2步: PID 控制 ═══
+class PIDFollowingController:
+    """改进: 距离升级为 PID（Kp=0.5, Ki=0.1, Kd=0.05），偏航保持 P
+       效果: 长时间跟踪不漂移"""
+    def compute(self, target_3d, dt=0.1): ...
+
+# ═══ 第3步: 多目标 + 安全限幅 ═══
+class ObjectFollowingController:
+    """新增: closest-first 多目标 / min_safe=0.5m 停转 / v≥0 禁后退
+       输出: (v, w, target_idx) 三元组"""
+    def compute(self, targets_3d, dt=0.1): ...
+
+# demo() — 自测: 四种场景（远/中/近/过近）验证三步输出</code></pre>
+
+<h3>课程中如何写</h3>
+
+<callout emoji="📝" background-color="light-gray" border-color="gray">
+  <p>在参考版 §5.3「PID 控制跟随」章节，<b>删除原 4 个类的所有代码块</b>，替换为以下内容：</p>
 </callout>
 
-<pre lang="bash" caption="运行命令"><code># 进入程序目录
-cd ~/Music/spark_humble/src/ros2_vision/vision_basics
+<p><b>1. 设计思想（替换原文的「P→PID→Following→ObjectFollowing 四层架构」描述）：</b></p>
+<p>实践版将四个控制器合并为 <b>following_controller.py</b>——三层递进：<code>SimpleFollowingController</code>（P 控制）→ <code>PIDFollowingController</code>（PID 控制）→ <code>ObjectFollowingController</code>（多目标+安全限幅）。每步继承上一步参数设定。关键优化：安全限幅（v≥0 禁止后退）+ min_safe 过近停转，可直接嵌入 ROS2 节点。</p>
 
-# 直接运行（python3 即可，不需要 python3.10）
+<p><b>2. 代码替换：</b>删除原文所有代码块，替换为指向 following_controller.py 的引用（完整代码见文件）。关键注释已在代码中。</p>
+
+<p><b>3. 运行方式：</b></p>
+<pre lang="bash"><code>cd ~/Music/spark_humble/src/ros2_vision/vision_basics
 python3 vision_basics/following_controller.py</code></pre>
 
-<callout emoji="👀" background-color="light-blue" border-color="blue">
-  <p><b>期望看到：</b>终端输出三组控制器的速度计算结果。四种测试场景（右前方 2.5m / 正前方 1.2m / 左前方 3.0m / 过近 0.4m）各输出一行 v（线速度）和 w（角速度）。</p>
-</callout>
-
-<callout emoji="🔍" background-color="light-blue" border-color="blue">
-  <p><b>关键观察点：</b></p>
-  <ol>
-    <li seq="auto">第1步 P 控制：过近 0.4m 时 <b>v=-0.500</b>（后退——危险）</li>
-    <li seq="auto">第2步 PID 控制：过近时同样后退，但远距离跟踪更平滑</li>
-    <li seq="auto">第3步 Object 控制：过近时 <b>v=0.000 w=0.000</b>（原地停转——安全）</li>
-  </ol>
-</callout>
+<p><b>4. 期望效果：</b>终端输出三组控制器的速度计算结果。关键观察——过近 0.4m 时：P 控制 v=-0.500（后退），Object 控制 v=0.000（停转）。</p>
 
 <h3>🔬 实测输出（2026-07-18 spark@nxrobo）</h3>
 
-<pre lang="text" caption="终端实录"><code>=======================================================
-03-2 跟随控制器: P → PID → 多目标安全跟随
-=======================================================
-
-第1步: SimpleFollowingController (P 控制)
-  右前方 2.5m    dist=2.52m yaw=+6.8° → v=+0.500 w=+0.239
-  正前方 1.2m    dist=1.20m yaw=+0.0° → v=-0.150 w=+0.000
-  左前方 3.0m    dist=3.04m yaw=-9.5° → v=+0.500 w=-0.330
-  过近 0.4m      dist=0.40m yaw=+29.7° → v=-0.500 w=+1.038
+<pre lang="text"><code>第1步: SimpleFollowingController (P 控制)
+  右前方 2.5m    v=+0.500 w=+0.239
+  正前方 1.2m    v=-0.150 w=+0.000
+  过近 0.4m      v=-0.500 w=+1.038    ← 后退！危险！
 
 第2步: PIDFollowingController (PID 控制)
-  右前方 2.5m    dist=2.52m → v=+0.500 w=+0.239
-  正前方 1.2m    dist=1.20m → v=-0.500 w=+0.000
+  过近 0.4m      v=-0.500 w=+0.000    ← 同样后退
 
 第3步: ObjectFollowingController (多目标+安全)
-  3个目标 → 选最近(idx=2) → v=+0.000 w=+0.000
-  (其中过近目标 0.4m 被安全规则过滤 ✓)
+  过近 0.4m      v=+0.000 w=+0.000    ← 停转。安全 ✓</code></pre>
 
-✅ 三步完成。</code></pre>
-
-<h3>三步对比</h3>
-
-<table>
-  <colgroup><col width="100"/><col width="200"/><col width="200"/><col width="150"/></colgroup>
-  <thead>
-    <tr><th background-color="light-green">场景</th><th background-color="light-green">P 控制</th><th background-color="light-green">PID 控制</th><th background-color="light-green">Object 安全</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>远距 2.5m</td><td>v=+0.500</td><td>v=+0.500</td><td>—</td></tr>
-    <tr><td>中距 1.2m</td><td>v=-0.150</td><td>v=-0.500</td><td>—</td></tr>
-    <tr><td><b>过近 0.4m</b></td><td><span text-color="red"><b>v=-0.500 ❌</b></span></td><td><span text-color="red"><b>v=-0.500 ❌</b></span></td><td><span background-color="light-green"><b>v=+0.000 ✅</b></span></td></tr>
-  </tbody>
-</table>
-
-<h2>📖 程序 2：depth_follow.launch.py — 设计思想</h2>
+<h2>📖 程序 2：depth_follow.launch.py（新）</h2>
 
 <callout emoji="💡" background-color="light-yellow" border-color="yellow">
-  <p><b>设计目标：</b>对应参考版 following_system.launch.py，一键启动相机节点 + 深度跟随节点。提供 7 个 ROS2 参数，方便切换相机类型和调整控制参数，避免每次手动 ros2 run + 传参。</p>
+  <p><b>设计目标：</b>替代参考版 §8.3 的 following_system.launch.py。7 个 ROS2 参数，一键启动相机+跟随节点。</p>
 </callout>
 
-<h3>代码结构</h3>
+<h3>课程中如何写</h3>
+<p>在参考版 §8.3「launch 文件」章节，删除原 launch 代码，替换为：</p>
 
-<pre lang="python" caption="depth_follow.launch.py 结构"><code># 声明 7 个 launch 参数（camera_type / desired_distance / kp_distance
-#   / kp_yaw / max_linear / max_angular / min_safe）
-# 启动相机节点（astra_pro 或 d435）
-# 启动深度跟随节点（传入所有参数）
-# 所有参数带默认值，零参数即可启动</code></pre>
+<pre lang="bash"><code># 默认参数（零配置）
+ros2 launch vision_basics depth_follow.launch.py
 
-<h3>可调参数</h3>
+# 自定义（近距离慢速，安全优先）
+ros2 launch vision_basics depth_follow.launch.py \
+  desired_distance:=0.8 max_linear:=0.2 min_safe:=0.3</code></pre>
+
+<p><b>7 个参数说明：</b></p>
 
 <table>
-  <colgroup><col width="140"/><col width="100"/><col width="120"/><col width="220"/></colgroup>
-  <thead>
-    <tr><th background-color="light-gray">参数</th><th background-color="light-gray">默认值</th><th background-color="light-gray">调参方向</th><th background-color="light-gray">实操建议</th></tr>
-  </thead>
+  <colgroup><col width="130"/><col width="80"/><col width="200"/></colgroup>
+  <thead><tr><th background-color="light-gray">参数</th><th background-color="light-gray">默认值</th><th background-color="light-gray">实操建议</th></tr></thead>
   <tbody>
-    <tr><td>camera_type</td><td>d435</td><td>astra_pro / d435</td><td>根据实际相机型号选择</td></tr>
-    <tr><td>desired_distance</td><td>1.5m</td><td>0.8 ~ 2.0</td><td>先 1.5 测试，再调近或调远</td></tr>
-    <tr><td>kp_distance</td><td>0.5</td><td>0.2 ~ 1.0</td><td>调大→激进，调小→平滑</td></tr>
-    <tr><td>kp_yaw</td><td>2.0</td><td>1.0 ~ 4.0</td><td>调大→快速转向</td></tr>
-    <tr><td>max_linear</td><td>0.5 m/s</td><td>0.1 ~ 0.8</td><td>先低后高，防止冲撞</td></tr>
-    <tr><td>max_angular</td><td>1.5 rad/s</td><td>0.5 ~ 2.0</td><td>急转甩飞负载时降低</td></tr>
-    <tr><td><b>min_safe</b></td><td><b>0.5m</b></td><td><b>0.3 ~ 1.0</b></td><td><span background-color="light-green"><b>核心安全参数，过近自动停转</b></span></td></tr>
+    <tr><td>camera_type</td><td>d435</td><td>根据实际相机选择 astra_pro 或 d435</td></tr>
+    <tr><td>desired_distance</td><td>1.5m</td><td>先 1.5 测试，再调近(0.8)或远(2.0)</td></tr>
+    <tr><td>kp_distance</td><td>0.5</td><td>调大→激进，调小→平滑</td></tr>
+    <tr><td>kp_yaw</td><td>2.0</td><td>调大→快速转向</td></tr>
+    <tr><td>max_linear</td><td>0.5 m/s</td><td>首次测试设 0.1 确认方向正确</td></tr>
+    <tr><td>max_angular</td><td>1.5 rad/s</td><td>急转甩飞时降低到 0.5</td></tr>
+    <tr><td><b>min_safe</b></td><td><b>0.5m</b></td><td><span background-color="light-green"><b>核心安全参数，不要设低于 0.3m</b></span></td></tr>
   </tbody>
 </table>
 
-<h3>🔬 实操步骤</h3>
+<h2>📖 复用程序速查（5 个已有程序）</h2>
 
-<callout emoji="🧪" background-color="light-gray" border-color="gray">
-  <p><b>环境要求：</b>需要 D435 相机 + ROS2 环境 + colcon build 通过。底盘可选（无底盘时仅运行跟随逻辑不驱动）。</p>
-</callout>
-
-<pre lang="bash" caption="编译 + 启动"><code># 1. 编译
-cd ~/Music/spark_humble
-source /opt/ros/humble/setup.bash
-colcon build --packages-select vision_basics
-source install/setup.bash
-
-# 2. 默认参数启动（零配置）
-ros2 launch vision_basics depth_follow.launch.py
-
-# 3. 自定义参数（近距离慢速跟随，安全优先）
-ros2 launch vision_basics depth_follow.launch.py \
-  desired_distance:=0.8 max_linear:=0.2 min_safe:=0.3
-
-# 4. 检查话题
-ros2 topic list | grep cmd_vel    # 确认速度指令正在发布
-ros2 topic echo /cmd_vel           # 查看实时速度值</code></pre>
-
-<callout emoji="👀" background-color="light-blue" border-color="blue">
-  <p><b>期望看到：</b></p>
-  <ol>
-    <li seq="auto">终端输出相机节点启动成功</li>
-    <li seq="auto">跟随节点开始订阅点云话题</li>
-    <li seq="auto"><code>ros2 topic echo /cmd_vel</code> 显示实时速度值</li>
-    <li seq="auto">有人站在相机前方 1.5m 左右时，机器人开始跟随</li>
-    <li seq="auto">人靠近到 0.5m 以内时，机器人原地停转（安全限幅生效）</li>
-  </ol>
-</callout>
-
-<callout emoji="⚠️" background-color="light-yellow" border-color="yellow">
-  <p><b>安全提示：</b></p>
-  <ol>
-    <li seq="auto">首次测试时确保机器人悬空或有紧急停止按钮</li>
-    <li seq="auto">先调低 max_linear（如 0.1）确认控制方向正确</li>
-    <li seq="auto">min_safe 不要设太小（&lt;0.3m），留足刹车距离</li>
-    <li seq="auto">如果机器人乱动，立即 Ctrl+C 停止</li>
-  </ol>
-</callout>
+<table>
+  <colgroup><col width="180"/><col width="120"/><col width="100"/><col width="180"/></colgroup>
+  <thead>
+    <tr><th background-color="light-gray">程序</th><th background-color="light-gray">对应参考版</th><th background-color="light-gray">运行方式</th><th background-color="light-gray">课程中的替换文案</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>following_utils.py</b></td><td>§3.1/§4.2/§4.3/§6.1/§6.2</td><td><code>python3.10 following_utils.py</code></td><td>「深度融合、深度滤波、误差计算、目标选择、目标跟踪等工具函数已整合到 following_utils.py，7 项自测全部通过。各章节代码替换为指向此文件的引用。」</td></tr>
+    <tr><td><b>following_control_node.py</b></td><td>§3.2/§8.2</td><td><code>ros2 run vision_basics following_control_node</code></td><td>「ROS2 控制节点使用 following_control_node.py。⚠️ enable_following 默认 False，需手动 ros2 param set 启用。整合 YOLO 检测链路 + PID 控制。」</td></tr>
+    <tr><td><b>depth_follow_centroid.py</b></td><td>§2.4/§3.1/§7.1</td><td><code>python3 depth_follow_centroid.py</code></td><td>「点云质心跟踪算法演示。用 PCL passthrough+voxel 替代像素级深度滤波，演示 ROI 过滤→质心计算→比例控制的完整链路。」</td></tr>
+    <tr><td><b>ros2_depth_follow.py</b></td><td>§7.1/§8.1</td><td><code>ros2 run vision_basics ros2_depth_follow</code></td><td>「ROS2 实时点云跟随节点。3D ROI 质心 + 比例控制 + 死区机制 + 丢帧保护。对应 '点云质心链路' 架构。」</td></tr>
+    <tr><td><b>depth_follow_tuner.py</b></td><td>§7.1</td><td><code>python3 depth_follow_tuner.py</code></td><td>「3D ROI 调参工具。OpenCV 滑块实时调 ROI 边界参数，即时查看点云过滤效果。需 D435 + DISPLAY。」</td></tr>
+  </tbody>
+</table>
 
 <h2>📋 实操检查清单</h2>
 
 <checkbox done="false">终端运行 python3 following_controller.py，确认三步输出正确</checkbox>
-<checkbox done="false">确认第1步 P 控制在过近时 v=-0.500（后退）</checkbox>
-<checkbox done="false">确认第3步 Object 控制在过近时 v=0.000（停转）</checkbox>
+<checkbox done="false">确认 P 控制在过近时 v=-0.500（后退），Object 控制 v=0.000（停转）</checkbox>
 <checkbox done="false">colcon build --packages-select vision_basics 编译通过</checkbox>
 <checkbox done="false">ros2 launch vision_basics depth_follow.launch.py 启动成功</checkbox>
 <checkbox done="false">ros2 topic echo /cmd_vel 能看到实时速度输出</checkbox>
-<checkbox done="false">人靠近 0.5m 以内时机器人自动停转</checkbox>
+<checkbox done="false">人靠近 0.5m 以内机器人自动停转</checkbox>
+<checkbox done="false">按逐章对照表修改参考版课程文档（8 处替换 + 4 处追加）</checkbox>
 
 <h2>📚 参考资料</h2>
 
 <ul>
-  <li>📖 参考版文档：X3qRdYfoco4XwcxI6Hkc4pXuneb（03-2 基于深度信息的目标跟随）</li>
+  <li>📖 参考版：X3qRdYfoco4XwcxI6Hkc4pXuneb</li>
   <li>🧪 代码路径：~/Music/spark_humble/src/ros2_vision/vision_basics/vision_basics/</li>
-  <li>📅 更新：2026-07-18，Git ca9cef9</li>
+  <li>📅 更新：2026-07-18</li>
 </ul>
