@@ -4,6 +4,35 @@
   <p><b>复现目标：</b>基于参考版 X3qRdYfoco4XwcxI6Hkc4pXuneb（2749 行），分析 13 个课程程序，创建 2 个新程序 + 复用 5 个已有程序，在 Spark 机器人上跑通 P→PID→安全限幅三步递进跟随。</p>
 </callout>
 
+<h2>📝 课程修改指引（逐章对照）</h2>
+
+<p>以下标注参考版 X3qRdYfoco4XwcxI6Hkc4pXuneb 每个章节应如何修改，以适配实践版程序。</p>
+
+<table>
+  <colgroup><col width="60"/><col width="180"/><col width="100"/><col width="120"/><col width="180"/></colgroup>
+  <thead>
+    <tr><th background-color="light-gray">章节</th><th background-color="light-gray">参考版内容</th><th background-color="light-gray">操作</th><th background-color="light-gray">实践版程序</th><th background-color="light-gray">修改说明</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>§2.4</td><td>深度信息滤波<br/>（median / bilateral / inpainting）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py<br/>depth_follow_tuner.py</td><td>删除三个像素级滤波函数及其代码块。替换为：「实践版在点云上用 <b>PCL passthrough</b> 做直通滤波 + <b>PCL voxel</b> 做体素降采样，比深度图逐像素滤波更快更稳定。详见 depth_follow_centroid.py。」</td></tr>
+    <tr><td>§3.1</td><td>RGB-D 融合<br/>（yolo_detection_example）</td><td><span text-color="red">替换</span></td><td>following_utils.py</td><td>删除 YOLO+深度融合的示例代码。替换为：「实践版深度跟随用 <b>3D ROI 直接分割</b>，比 YOLO+bbox 延迟更低。YOLO 目标检测属 04-1 章节内容，此处不重复。深度融合工具函数已整合到 following_utils.py。」</td></tr>
+    <tr><td>§4.1</td><td>基于边界框的深度估计<br/>（mean / median / pointcloud）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py</td><td>删除三种 3D 定位方法的独立函数。替换为：「实践版统一使用<b>点云质心法</b>——对 ROI 内所有点求均值得到 (cx, cy, cz)，比 bbox 均值/中值法更鲁棒。详见 depth_follow_centroid.py。」</td></tr>
+    <tr><td>§4.2</td><td>深度滤波与时序平滑</td><td><span text-color="red">替换</span></td><td>following_utils.py<br/>（DepthFilter / KalmanDepthFilter）</td><td>保留时序平滑的概念讲解，将代码替换为：「实践版提供 EMA 滤波器和 Kalman 滤波器两种实现，位于 following_utils.py 的 DepthFilter 和 KalmanDepthFilter 类。」</td></tr>
+    <tr><td>§5.2</td><td>纯距离跟随（Bang-Bang）</td><td><span text-color="gray">保留</span></td><td>—</td><td>保留作为对照。添加 callout：「实践版将比例控制作为 following_controller.py 的第1步，与 Bang-Bang 形成对比——比例控制比开关控制更平滑。」</td></tr>
+    <tr><td>§5.3</td><td>PID 控制跟随<br/>（P → PIDController → FollowingController → ObjectFollowingController）</td><td><span text-color="red">重写</span></td><td>following_controller.py</td><td><b>本章整节重写。</b>删除 4 个独立类的代码，替换为：「实践版将四个控制器合并为 <b>following_controller.py</b>——三层递进（Simple → PID → Object），每步继承上一步参数。纯 Python 可自测，无需 ROS/相机。详见下文『程序 1』。」</td></tr>
+    <tr><td>§6</td><td>多目标场景处理</td><td><span text-color="gray">保留概念</span></td><td>following_controller.py<br/>（ObjectFollowingController）</td><td>保留目标选择策略的理论讲解。将代码替换为：「实践版的 closest-first 策略实现在 ObjectFollowingController.compute() 中——遍历所有目标选距离最近者，返回 target_idx。」</td></tr>
+    <tr><td>§7.1</td><td>深度目标检测与定位（OpenCV+PCL）</td><td><span text-color="red">替换</span></td><td>depth_follow_centroid.py<br/>ros2_depth_follow.py</td><td>删除原代码块。替换为：「实践版提供两个版本——<b>depth_follow_centroid.py</b>（纯数值演示）和 <b>ros2_depth_follow.py</b>（ROS2 实时节点，3D ROI + 比例控制 + 死区 + 丢帧保护）。」</td></tr>
+    <tr><td>§7.2</td><td>跟随控制器代码（OpenCV+PCL）</td><td><span text-color="red">替换</span></td><td>following_controller.py</td><td>删除原代码块。替换为：「实践版使用 <b>following_controller.py</b>（P→PID→Object 三步递进），已在上文 §5.3 详细说明。」</td></tr>
+    <tr><td>§8.2</td><td>ROS2 跟随控制节点实现</td><td><span text-color="red">替换</span></td><td>following_control_node.py</td><td>删除原代码块。替换为：「实践版 <b>following_control_node.py</b> 整合 YOLO 检测链路 + PID 控制。关键安全设计：<b>enable_following 默认 False</b>，必须手动 ros2 param set 启用。无目标时自动减速停止。」</td></tr>
+    <tr><td>§8.3</td><td>launch 文件</td><td><span text-color="red">替换</span></td><td>depth_follow.launch.py</td><td>删除原 launch 代码。替换为：「实践版 <b>depth_follow.launch.py</b> 提供 7 个 ROS2 可调参数，一键启动相机+跟随节点。详见下文『程序 2』。」</td></tr>
+    <tr><td>§10</td><td>练习题（pixel_and_depth_to_3d / test_simple_controller）</td><td><span text-color="red">替换</span></td><td>following_utils.py<br/>following_controller.py</td><td>删除原练习题代码。替换为：「像素反投影函数已内置在 following_utils.py 的 pixel_and_depth_to_3d()。控制器测试已融入 following_controller.py 的 demo() 自测函数——四种场景自动验证。」</td></tr>
+  </tbody>
+</table>
+
+<callout emoji="📖" background-color="light-blue" border-color="blue">
+  <p><b>修改原则：</b>参考版共 11 个 H3/H4 章节。其中 <b>3 个保留概念</b>（§5.2/§6/§8.1），<b>8 个需要替换或重写代码</b>。每个替换都有明确的实践版程序对应，不是删除——是升级。</p>
+</callout>
+
 <h2>📊 程序总览</h2>
 
 <p>参考版共 13 个程序/函数。创建 <b>2 个新程序</b>，复用 <b>5 个已有程序</b>，跳过 <b>11 个</b>（工程有更优替代方案）。</p>
