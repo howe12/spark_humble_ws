@@ -298,6 +298,75 @@ ros2 launch vision_basics depth_follow.launch.py \
   </tbody>
 </table>
 
+<h2>🚨 实践踩坑与方案演进（2026-07-18 实测）</h2>
+
+<callout background-color="light-yellow">
+<b>本节记录在 Spark 真机上运行深度跟随时的 4 个关键问题。</b>每一条都是真实踩坑——学生在课程中遇到相同现象时，应能对照本节定位原因。
+</callout>
+
+<h3>坑 1：深度图单位是毫米，不是米</h3>
+
+<p><b>现象：</b>右侧深度热力图几乎全红，ROI 绿色高亮区域不显示。</p>
+<p><b>原因：</b><code>/camera/aligned_depth_to_color/image_raw</code> 实测编码 <code>16UC1</code>（16 位无符号整数，单位<b>毫米</b>），值域 171~13013。若按米处理（clip 0~3），全部像素被截到 3 → 整图红色。</p>
+<p><b>修复：</b></p>
+<pre lang="python">
+# 深度图 → 米 (关键!)
+self.depth_image = self.bridge.imgmsg_to_cv2(msg, '32FC1') / 1000.0
+</pre>
+<p><b>对照：</b>点云 <code>/camera/depth/color/points</code> 的 x/y/z 单位是<b>米</b>。同一数据，两种单位——课程必讲。</p>
+
+<h3>坑 2：点云是 depth 坐标系，直接投影 RGB 会偏移</h3>
+
+<p><b>现象：</b>ROI 框和质心红点在 RGB 画面上错位（近处偏移可达 100+px）。</p>
+<p><b>原因：</b>点云 frame 实测为 <code>camera_depth_optical_frame</code>（深度坐标系），与 RGB 的 <code>camera_color_optical_frame</code> 存在基线偏移；且两套内参不同（彩色 fx≈605，深度 fx≈422）。直接用彩色内参投影深度坐标系的 3D 点是错的。</p>
+<p><b>修复（方案 A）：</b>改用 <b>aligned 深度图反投影</b>——深度图已对齐到彩色（同 frame），用彩色内参反投影得到的 3D 点与 RGB 像素一一对应，零偏移：</p>
+<pre lang="python">
+def depth_to_points(self):
+    z = self.depth_image                      # 米
+    U, V = np.meshgrid(np.arange(w), np.arange(h))
+    X = (U - self.cx) * z / self.fx           # 反投影
+    Y = (V - self.cy) * z / self.fy
+    return np.stack([X, Y, z], axis=-1)[valid]
+</pre>
+<p><b>教学点：</b>「坐标系对齐」是 ROS 最常见的坑——同一物体在 depth 系和 color 系坐标不同，必须先变换再投影。</p>
+
+<h3>坑 3：质心（均值）判断距离不准确</h3>
+
+<p><b>现象：</b>距离显示与实际不符（偏近）。</p>
+<p><b>原因：</b>ROI 内混入背景点（地面/墙壁/反光），<code>mean(z)</code> 被拉偏。实测：人 1.2m + 背景 0.5m → mean=1.03m（偏 17cm）。</p>
+<p><b>修复：</b>三种深度判断模式可切换，默认 <code>median</code>（中值，抗离群）：</p>
+<pre lang="bash">
+ros2 run vision_basics depth_roi_demo_node --ros-args -p depth_mode:=median
+# mean=均值(质心) / median=中值(默认) / min=最近点
+</pre>
+
+<h3>坑 4：ROI 内离群点污染统计</h3>
+
+<p><b>现象：</b>深度边缘/反光处产生错误深度点，污染质心和距离。</p>
+<p><b>修复：</b>计算前先离群点剔除（深度信息滤波核心），4 种方法：</p>
+<ul>
+  <li><code>none</code>：不过滤（对照组）</li>
+  <li><code>zscore</code>（默认）：<code>|z - median| &lt; k × 1.4826×MAD</code>，用 median+MAD 抗离群</li>
+  <li><code>iqr</code>：去掉 <code>[Q1-1.5×IQR, Q3+1.5×IQR]</code> 之外的点</li>
+  <li><code>percentile</code>：保留 2%~98% 分位数</li>
+</ul>
+<pre lang="bash">
+ros2 run vision_basics depth_roi_demo_node --ros-args -p filter_method:=zscore
+</pre>
+<p><b>实测效果：</b>人 1.0m + 5% 错误深度点（0.1m 反光）→ mean 误差从 2.1cm 降到 0.1cm（改善 27 倍）。</p>
+
+<h3>✅ 最终推荐：深度图反投影 + 中值 + zscore 剔除</h3>
+
+<callout background-color="light-green">
+<b>运行方式（方案 A 完整链路）：</b><br/>
+1. 终端1：<code>ros2 launch camera_driver_transfer d435.launch.py</code>（相机，带深度+点云）<br/>
+2. 终端2：<code>export DISPLAY=:0; ros2 run vision_basics depth_roi_demo_node</code>（双画面可视化，不驱动底盘）<br/>
+<br/>
+数据流：aligned 深度图(毫米) → /1000 转米 → 反投影 3D(彩色系) → ROI 过滤 → zscore 离群剔除 → median 深度判断 → 运动控制显示
+</callout>
+
+<p><b>关键文件：</b><code>depth_roi_demo.py</code>（核心算法 + 6 项模拟测试）、<code>depth_roi_demo_node.py</code>（ROS2 双画面节点）。</p>
+
 <h2>📋 实操检查清单</h2>
 
 <checkbox done="false">终端运行 python3 following_controller.py，确认三步输出正确</checkbox>

@@ -65,6 +65,7 @@ setup(
             'ros2_depth_follow = vision_basics.ros2_depth_follow:main',
             'depth_follow_tuner = vision_basics.depth_follow_tuner:main',
             'following_control_node = vision_basics.following_control_node:main',
+            'depth_roi_demo_node = vision_basics.depth_roi_demo_node:main',
         ],
     },
 )
