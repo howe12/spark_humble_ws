@@ -105,7 +105,7 @@
 
     <!-- §7 OpenCV+PCL -->
     <tr><td rowspan="2">§7<br/>OpenCV+PCL实践</td>
-    <tr><td>§7.1 深度目标检测与定位<br/><code>DepthObjectDetector</code></td><td><b>有</b></td>
+    <td>§7.1 深度目标检测与定位<br/><code>DepthObjectDetector</code></td><td><b>有</b></td>
     <td><span background-color="light-green">替换为 centroid + tuner + depth_roi_demo_node 三个程序。</span></td>
     <td><code>python3 depth_follow_centroid.py</code><br/><code>python3 depth_follow_tuner.py</code><br/><code>ros2 run vision_basics depth_roi_demo_node</code>（方案A双画面）</td>
     <td><span text-color="red">替换代码</span>。见下文「复用程序」+「程序 3/4」。</td></tr>
@@ -313,7 +313,7 @@ ros2 launch vision_basics depth_follow.launch.py \
 
 # 关键函数 1: 离群点剔除 (深度信息滤波核心)
 def remove_outliers(in_xyz, method='zscore', k=2.5):
-    """zscore: |z - median| < k × 1.4826×MAD (median+MAD 抗离群)
+    """zscore: |z - median| &lt; k × 1.4826×MAD (median+MAD 抗离群)
        iqr    : [Q1-1.5×IQR, Q3+1.5×IQR] 之外剔除
        percentile: 保留 [k, 100-k] 百分位"""
 
@@ -324,7 +324,7 @@ def analyze_roi(points_xyz, roi=None, filter_method='none'):
 # 关键函数 3: 运动控制 (死区 + 限幅 + 丢失保护)
 def decide_motion(cx, cz, goal_depth=0.7, in_roi=True):
     """linear = (cz-goal)*Kp, angular = -asin(cx/cz)*Kp
-       死区: |cz-goal|<0.05 停, |cx|<0.087 不转
+       死区: |cz-goal|&lt;0.05 停, |cx|&lt;0.087 不转
        丢失: in_roi=False → 立即停止"""
 
 # 6 项模拟测试 (无硬件可跑)</code></pre>
