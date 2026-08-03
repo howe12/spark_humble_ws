@@ -452,12 +452,12 @@ ros2 run vision_basics depth_roi_demo_node --ros-args -p depth_mode:=median -p f
 <checkbox done="false">人靠近 0.5m 以内机器人自动停转</checkbox>
 <checkbox done="false">ros2 run vision_basics depth_roi_demo_node — 双画面显示，ROI 框/质心与 RGB 精确对齐</checkbox>
 <checkbox done="false">深度热力图颜色正常（近蓝远红，不是全红）——确认毫米→米转换生效</checkbox>
-<checkbox done="false">按逐章对照表修改参考版课程文档（8 处替换 + 4 处追加）</checkbox>
+<checkbox done="false">按逐章对照表修改参考版课程文档（10 处替换 + 1 处重写整节 + 3 处追加）</checkbox>
 
 <h2>📚 参考资料</h2>
 
 <ul>
   <li>📖 参考版：X3qRdYfoco4XwcxI6Hkc4pXuneb</li>
   <li>🧪 代码路径：~/Music/spark_humble/src/ros2_vision/vision_basics/vision_basics/</li>
-  <li>📅 更新：2026-07-18</li>
+  <li>📅 更新：2026-08-03（程序 3/4 新增 + 检查清单修订；实测数据 2026-07-18）</li>
 </ul>
