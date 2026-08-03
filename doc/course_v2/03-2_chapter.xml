@@ -39,9 +39,9 @@
     <td><span text-color="gray">保留</span>。末尾加一句实践版说明。</td></tr>
 
     <tr><td>§2.4 深度信息滤波<br/><code>median/bilateral/inpainting</code></td><td><b>有（3个函数）</b></td>
-    <td><span background-color="light-green">实践版用 PCL passthrough+voxel 替代像素滤波。</span></td>
-    <td><code>python3 depth_follow_centroid.py</code><br/>（演示点云滤波效果）</td>
-    <td><span text-color="red">替换代码</span>。删除 3 个滤波函数，替换为：「实践版在点云上滤波——PCL passthrough 做直通，PCL voxel 做降采样。比深度图逐像素滤波更快。详见 depth_follow_centroid.py。」</td></tr>
+    <td><span background-color="light-green">实践版用两种替代：①点云 PCL passthrough+voxel（centroid.py）；②depth_roi_demo.py 的 4 种离群剔除（zscore/iqr/percentile/none）+ median 深度判断。</span></td>
+    <td><code>python3 depth_follow_centroid.py</code><br/>（点云滤波）<br/><code>python3 depth_roi_demo.py</code><br/>（深度滤波算法演示）</td>
+    <td><span text-color="red">替换代码</span>。删除 3 个滤波函数，替换为：「实践版滤波两方案——①点云上 PCL passthrough 直通 + voxel 降采样（depth_follow_centroid.py）；②ROI 内先离群点剔除（zscore 用 median+MAD 抗离群 / iqr / percentile），深度判断默认用中值 median 而非均值（depth_roi_demo.py）。比逐像素滤波更快更鲁棒。」</td></tr>
 
     <!-- §3 目标检测与深度融合 -->
     <tr><td rowspan="2">§3<br/>目标检测与深度融合</td>
@@ -105,10 +105,10 @@
 
     <!-- §7 OpenCV+PCL -->
     <tr><td rowspan="2">§7<br/>OpenCV+PCL实践</td>
-    <td>§7.1 深度目标检测与定位<br/><code>DepthObjectDetector</code></td><td><b>有</b></td>
-    <td><span background-color="light-green">替换为 centroid + tuner 两个程序。</span></td>
-    <td><code>python3 depth_follow_centroid.py</code><br/><code>python3 depth_follow_tuner.py</code></td>
-    <td><span text-color="red">替换代码</span>。见下文「复用程序」。</td></tr>
+    <tr><td>§7.1 深度目标检测与定位<br/><code>DepthObjectDetector</code></td><td><b>有</b></td>
+    <td><span background-color="light-green">替换为 centroid + tuner + depth_roi_demo_node 三个程序。</span></td>
+    <td><code>python3 depth_follow_centroid.py</code><br/><code>python3 depth_follow_tuner.py</code><br/><code>ros2 run vision_basics depth_roi_demo_node</code>（方案A双画面）</td>
+    <td><span text-color="red">替换代码</span>。见下文「复用程序」+「程序 3/4」。</td></tr>
 
     <tr><td>§7.2 跟随控制器代码<br/><code>PIDControllerSingleVar</code></td><td><b>有</b></td>
     <td><span background-color="light-green">替换为 following_controller.py（三步递进）。</span></td>
@@ -132,7 +132,7 @@
     <td><span text-color="red">替换代码</span>。见下文「程序 2」。</td></tr>
 
     <!-- §9 小结 -->
-    <tr><td>§9<br/>本章小结</td><td>总结</td><td>—</td><td>保留。末尾追加实践版 7 个程序清单。</td><td>—</td><td><span text-color="gray">追加程序清单</span></td></tr>
+    <tr><td>§9<br/>本章小结</td><td>总结</td><td>—</td><td>保留。末尾追加实践版 9 个程序清单。</td><td>—</td><td><span text-color="gray">追加程序清单</span></td></tr>
 
     <!-- §10 练习题 -->
     <tr><td>§10<br/>练习题</td>
@@ -148,7 +148,7 @@
   <p><b>统计：</b>参考版共 10 章，内含 <b>20 个函数/类</b>。其中 <b>4 个保留概念</b>（纯理论），<b>8 个保留概念但代码指向实践版文件</b>，<b>8 个替换或重写代码</b>。</p>
 </callout>
 
-<h2>📊 程序总览（7 个程序）</h2>
+<h2>📊 程序总览（9 个程序）</h2>
 
 <table>
   <colgroup><col width="200"/><col width="80"/><col width="160"/><col width="160"/></colgroup>
@@ -163,6 +163,8 @@
   <tbody>
     <tr><td><b>following_controller.py</b></td><td>新</td><td>§5.3 + §7.2 + §10</td><td><code>python3 following_controller.py</code></td></tr>
     <tr><td><b>depth_follow.launch.py</b></td><td>新</td><td>§8.3</td><td><code>ros2 launch vision_basics depth_follow.launch.py</code></td></tr>
+    <tr><td><b>depth_roi_demo.py</b></td><td>新</td><td>§2.4 + §4.2</td><td><code>python3 depth_roi_demo.py</code></td></tr>
+    <tr><td><b>depth_roi_demo_node.py</b></td><td>新</td><td>§7.1</td><td><code>ros2 run vision_basics depth_roi_demo_node</code></td></tr>
     <tr><td>following_utils.py</td><td>复用</td><td>§3.1 + §4.2 + §4.3 + §6.1 + §6.2</td><td><code>python3.10 following_utils.py</code></td></tr>
     <tr><td>following_control_node.py</td><td>复用</td><td>§3.2 + §8.2</td><td><code>ros2 run vision_basics following_control_node</code></td></tr>
     <tr><td>depth_follow_centroid.py</td><td>复用</td><td>§2.4 + §3.1 + §7.1</td><td><code>python3 depth_follow_centroid.py</code></td></tr>
@@ -282,6 +284,147 @@ ros2 launch vision_basics depth_follow.launch.py \
   </tbody>
 </table>
 
+<h2>📖 程序 3：depth_roi_demo.py（新）</h2>
+
+<callout emoji="💡" background-color="light-yellow" border-color="yellow">
+  <p><b>设计目标：</b>替代参考版 §2.4「深度信息滤波」的 3 个像素级滤波函数。用点云统计滤波替代逐像素滤波——ROI 过滤 → 离群点剔除 → 质心/深度统计 → 运动控制，纯 numpy 可自测。</p>
+</callout>
+
+<h3>设计思想</h3>
+
+<table>
+  <colgroup><col width="160"/><col width="240"/><col width="240"/></colgroup>
+  <thead><tr><th background-color="light-gray">决策</th><th background-color="light-gray">参考版</th><th background-color="light-gray">实践版</th></tr></thead>
+  <tbody>
+    <tr><td>滤波对象</td><td>深度图逐像素（median/bilateral/inpainting）</td><td><span background-color="light-green">点云统计滤波（ROI 内离群点剔除）</span></td></tr>
+    <tr><td>距离判断</td><td>均值质心</td><td><span background-color="light-green">三模式：mean/median/min（默认 median 抗背景污染）</span></td></tr>
+    <tr><td>离群剔除</td><td>无</td><td><span background-color="light-green">zscore(MAD)/iqr/percentile 四种方法</span></td></tr>
+    <tr><td>速度</td><td>逐像素慢</td><td><span background-color="light-green">numpy 矢量运算快</span></td></tr>
+  </tbody>
+</table>
+
+<h3>代码结构（带注释）</h3>
+
+<pre lang="python" caption="depth_roi_demo.py 结构"><code>#!/usr/bin/env python3
+"""03-2 深度跟随: ROI 获取 + 深度判断 + 运动控制可视化演示
+
+处理链路: 原始点云 → 3D ROI 过滤 → 离群点剔除 → 质心/深度统计
+"""
+
+# 关键函数 1: 离群点剔除 (深度信息滤波核心)
+def remove_outliers(in_xyz, method='zscore', k=2.5):
+    """zscore: |z - median| < k × 1.4826×MAD (median+MAD 抗离群)
+       iqr    : [Q1-1.5×IQR, Q3+1.5×IQR] 之外剔除
+       percentile: 保留 [k, 100-k] 百分位"""
+
+# 关键函数 2: ROI 提取 + 统计 (各轴各司其职)
+def analyze_roi(points_xyz, roi=None, filter_method='none'):
+    """X左右 / Z前方 / Y高度 过滤 → 离群剔除 → mean/median/min 统计"""
+
+# 关键函数 3: 运动控制 (死区 + 限幅 + 丢失保护)
+def decide_motion(cx, cz, goal_depth=0.7, in_roi=True):
+    """linear = (cz-goal)*Kp, angular = -asin(cx/cz)*Kp
+       死区: |cz-goal|<0.05 停, |cx|<0.087 不转
+       丢失: in_roi=False → 立即停止"""
+
+# 6 项模拟测试 (无硬件可跑)</code></pre>
+
+<h3>⚠️ 常见坑（症状 + 原因 + 解决方案）</h3>
+
+<table>
+  <colgroup><col width="200"/><col width="200"/><col width="220"/></colgroup>
+  <thead><tr><th background-color="light-gray">症状</th><th background-color="light-gray">原因</th><th background-color="light-gray">解决方案</th></tr></thead>
+  <tbody>
+    <tr><td>距离显示偏近，与真实不符</td><td>均值质心被 ROI 内背景点（地面/墙壁/反光）拉偏。实测：人 1.2m + 背景 0.5m → mean=1.03m（偏 17cm）</td><td><span background-color="light-green">用 median（中值）判断距离，抗离群点</span></td></tr>
+    <tr><td>边缘/反光处产生错误深度点，污染统计</td><td>深度相机在边缘/反光/遮挡处输出错误深度</td><td><span background-color="light-green">计算前先 remove_outliers（zscore 默认，实测误差改善 27 倍）</span></td></tr>
+    <tr><td>给 result dict 加键后无目标场景 KeyError</td><td>漏改了空输入 / 点数不足的 return 分支</td><td><span background-color="light-green">三个 return 分支都要加新键</span></td></tr>
+  </tbody>
+</table>
+
+<h3>🔬 实测输出（2026-07-18 spark@nxrobo）</h3>
+
+<pre lang="text"><code>--- 测试 5: 模式对比 — 人 1.2m + 背景 0.5m (均值被污染) ---
+  mean  =1.03m  (被背景拉近 ❌)
+  median=1.18m  (稳健 ✅)
+
+--- 测试 6: 离群点剔除 — 人 1.0m + 5% 错误深度点(0.1m) ---
+  [none]   mean = 0.979m   ← 被拉到 0.98m ❌
+  [zscore] mean = 1.001m   ← 误差 0.1cm ✅ (改善 27×)
+  [iqr]    mean = 1.001m   ✅</code></pre>
+
+<h2>📖 程序 4：depth_roi_demo_node.py（新）</h2>
+
+<callout emoji="💡" background-color="light-yellow" border-color="yellow">
+  <p><b>设计目标：</b>替代参考版 §7.1「深度目标检测与定位」的 DepthObjectDetector。方案 A：全部用 aligned 深度图反投影（彩色坐标系），与 RGB 像素零偏移。双画面可视化，<b>只显示不发布 cmd_vel</b>（教学演示不驱动底盘）。</p>
+</callout>
+
+<h3>设计思想</h3>
+
+<table>
+  <colgroup><col width="160"/><col width="240"/><col width="240"/></colgroup>
+  <thead><tr><th background-color="light-gray">决策</th><th background-color="light-gray">参考版</th><th background-color="light-gray">实践版</th></tr></thead>
+  <tbody>
+    <tr><td>数据源</td><td>点云 /camera/depth/color/points</td><td><span background-color="light-green">aligned 深度图反投影（彩色系，零偏移）</span></td></tr>
+    <tr><td>坐标系</td><td>depth 系（直接投影 RGB 偏移 100+px）</td><td><span background-color="light-green">color 系（与 RGB 像素一一对应）</span></td></tr>
+    <tr><td>深度图单位</td><td>忽略（热力图全红）</td><td><span background-color="light-green">16UC1 毫米 → /1000 转米</span></td></tr>
+    <tr><td>发布 cmd_vel</td><td>驱动底盘</td><td><span background-color="light-green">不发布，只叠加显示（教学安全）</span></td></tr>
+  </tbody>
+</table>
+
+<h3>代码结构（带注释）</h3>
+
+<pre lang="python" caption="depth_roi_demo_node.py 结构"><code>#!/usr/bin/env python3
+"""方案A: aligned 深度图反投影 → ROI → 运动控制 → 双画面显示"""
+
+# 深度图 → 3D 点 (彩色坐标系, 米) — 关键反投影
+def depth_to_points(self):
+    z = self.depth_image                      # 已 /1000 转米
+    U, V = np.meshgrid(np.arange(w), np.arange(h))
+    X = (U - self.cx) * z / self.fx           # 反投影公式
+    Y = (V - self.cy) * z / self.fy
+    return np.stack([X, Y, z], axis=-1)[valid]
+
+# 深度图回调 (16UC1 毫米 → 米, 关键!)
+def depth_cb(self, msg):
+    self.depth_image = self.bridge.imgmsg_to_cv2(msg, '32FC1') / 1000.0
+
+# 每帧: 反投影 → analyze_roi → decide_motion → draw_overlay
+def process_frame(self): ...
+
+# 双画面: 左 RGB(ROI框+质心+箭头) + 右深度热力图(ROI高亮+滤波值)
+def draw_overlay(self, res, lx, az, action, mode, depth_control, filter_method): ...</code></pre>
+
+<h3>⚠️ 常见坑（症状 + 原因 + 解决方案）</h3>
+
+<table>
+  <colgroup><col width="200"/><col width="200"/><col width="220"/></colgroup>
+  <thead><tr><th background-color="light-gray">症状</th><th background-color="light-gray">原因</th><th background-color="light-gray">解决方案</th></tr></thead>
+  <tbody>
+    <tr><td>深度热力图全红，ROI 高亮消失</td><td>aligned_depth_to_color 是 16UC1 <b>毫米</b>，按米处理（clip 0~3）全截到 3</td><td><span background-color="light-green">imgmsg_to_cv2(msg, '32FC1') / 1000.0 转米</span></td></tr>
+    <tr><td>ROI 框/质心红点在 RGB 上错位</td><td>点云 /camera/depth/color/points 实测在 depth 坐标系（camera_depth_optical_frame），与彩色有基线偏移；且两套内参不同（彩色 fx≈605，深度 fx≈422）</td><td><span background-color="light-green">方案 A：用 aligned 深度图反投影（color 系），零偏移。写可视化前先 ros2 topic echo --field header.frame_id 确认坐标系</span></td></tr>
+    <tr><td>节点收不到数据，画面永不绘制</td><td>话题名写错（默认 launch 是单层 /camera/...，不是双层 camera/camera/...）</td><td><span background-color="light-green">先 ros2 topic list | grep camera 实测，话题名参数化</span></td></tr>
+    <tr><td>SSH 运行无窗口</td><td>DISPLAY 为空</td><td><span background-color="light-green">export DISPLAY=:0 再运行（画面在机器人物理屏）</span></td></tr>
+  </tbody>
+</table>
+
+<h3>🔬 实测输出（2026-07-18 spark@nxrobo 真机）</h3>
+
+<pre lang="text"><code>[INFO] 深度跟随可视化启动(方案A:深度图反投影): goal=0.7m
+[INFO] 订阅: /camera/color/image_raw | /camera/aligned_depth_to_color/image_raw
+[INFO] n=33219/43200 滤波=zscore 模式=median 控制深度=0.38m
+       (mean=0.37 median=0.38 min=0.17) cmd=(lx=-0.39,az=0.00) 后退
+  ← 相机前 0.38m 物体(近于目标 0.7m) → 正确输出后退</code></pre>
+
+<p><b>运行方式：</b></p>
+<pre lang="bash"><code># 终端1: 相机 (带深度+点云)
+ros2 launch camera_driver_transfer d435.launch.py
+# 终端2: 双画面可视化 (不驱动底盘)
+export DISPLAY=:0
+ros2 run vision_basics depth_roi_demo_node
+# 可切换参数
+ros2 run vision_basics depth_roi_demo_node --ros-args -p depth_mode:=median -p filter_method:=zscore</code></pre>
+
+
 <h2>📖 复用程序速查（5 个已有程序）</h2>
 
 <table>
@@ -298,83 +441,17 @@ ros2 launch vision_basics depth_follow.launch.py \
   </tbody>
 </table>
 
-<h2>🚨 实践踩坑与方案演进（2026-07-18 实测）</h2>
-
-<callout background-color="light-yellow">
-<b>本节记录在 Spark 真机上运行深度跟随时的 4 个关键问题。</b>每一条都是真实踩坑——学生在课程中遇到相同现象时，应能对照本节定位原因。
-</callout>
-
-<h3>坑 1：深度图单位是毫米，不是米</h3>
-
-<p><b>现象：</b>右侧深度热力图几乎全红，ROI 绿色高亮区域不显示。</p>
-<p><b>原因：</b><code>/camera/aligned_depth_to_color/image_raw</code> 实测编码 <code>16UC1</code>（16 位无符号整数，单位<b>毫米</b>），值域 171~13013。若按米处理（clip 0~3），全部像素被截到 3 → 整图红色。</p>
-<p><b>修复：</b></p>
-<pre lang="python">
-# 深度图 → 米 (关键!)
-self.depth_image = self.bridge.imgmsg_to_cv2(msg, '32FC1') / 1000.0
-</pre>
-<p><b>对照：</b>点云 <code>/camera/depth/color/points</code> 的 x/y/z 单位是<b>米</b>。同一数据，两种单位——课程必讲。</p>
-
-<h3>坑 2：点云是 depth 坐标系，直接投影 RGB 会偏移</h3>
-
-<p><b>现象：</b>ROI 框和质心红点在 RGB 画面上错位（近处偏移可达 100+px）。</p>
-<p><b>原因：</b>点云 frame 实测为 <code>camera_depth_optical_frame</code>（深度坐标系），与 RGB 的 <code>camera_color_optical_frame</code> 存在基线偏移；且两套内参不同（彩色 fx≈605，深度 fx≈422）。直接用彩色内参投影深度坐标系的 3D 点是错的。</p>
-<p><b>修复（方案 A）：</b>改用 <b>aligned 深度图反投影</b>——深度图已对齐到彩色（同 frame），用彩色内参反投影得到的 3D 点与 RGB 像素一一对应，零偏移：</p>
-<pre lang="python">
-def depth_to_points(self):
-    z = self.depth_image                      # 米
-    U, V = np.meshgrid(np.arange(w), np.arange(h))
-    X = (U - self.cx) * z / self.fx           # 反投影
-    Y = (V - self.cy) * z / self.fy
-    return np.stack([X, Y, z], axis=-1)[valid]
-</pre>
-<p><b>教学点：</b>「坐标系对齐」是 ROS 最常见的坑——同一物体在 depth 系和 color 系坐标不同，必须先变换再投影。</p>
-
-<h3>坑 3：质心（均值）判断距离不准确</h3>
-
-<p><b>现象：</b>距离显示与实际不符（偏近）。</p>
-<p><b>原因：</b>ROI 内混入背景点（地面/墙壁/反光），<code>mean(z)</code> 被拉偏。实测：人 1.2m + 背景 0.5m → mean=1.03m（偏 17cm）。</p>
-<p><b>修复：</b>三种深度判断模式可切换，默认 <code>median</code>（中值，抗离群）：</p>
-<pre lang="bash">
-ros2 run vision_basics depth_roi_demo_node --ros-args -p depth_mode:=median
-# mean=均值(质心) / median=中值(默认) / min=最近点
-</pre>
-
-<h3>坑 4：ROI 内离群点污染统计</h3>
-
-<p><b>现象：</b>深度边缘/反光处产生错误深度点，污染质心和距离。</p>
-<p><b>修复：</b>计算前先离群点剔除（深度信息滤波核心），4 种方法：</p>
-<ul>
-  <li><code>none</code>：不过滤（对照组）</li>
-  <li><code>zscore</code>（默认）：<code>|z - median| &lt; k × 1.4826×MAD</code>，用 median+MAD 抗离群</li>
-  <li><code>iqr</code>：去掉 <code>[Q1-1.5×IQR, Q3+1.5×IQR]</code> 之外的点</li>
-  <li><code>percentile</code>：保留 2%~98% 分位数</li>
-</ul>
-<pre lang="bash">
-ros2 run vision_basics depth_roi_demo_node --ros-args -p filter_method:=zscore
-</pre>
-<p><b>实测效果：</b>人 1.0m + 5% 错误深度点（0.1m 反光）→ mean 误差从 2.1cm 降到 0.1cm（改善 27 倍）。</p>
-
-<h3>✅ 最终推荐：深度图反投影 + 中值 + zscore 剔除</h3>
-
-<callout background-color="light-green">
-<b>运行方式（方案 A 完整链路）：</b><br/>
-1. 终端1：<code>ros2 launch camera_driver_transfer d435.launch.py</code>（相机，带深度+点云）<br/>
-2. 终端2：<code>export DISPLAY=:0; ros2 run vision_basics depth_roi_demo_node</code>（双画面可视化，不驱动底盘）<br/>
-<br/>
-数据流：aligned 深度图(毫米) → /1000 转米 → 反投影 3D(彩色系) → ROI 过滤 → zscore 离群剔除 → median 深度判断 → 运动控制显示
-</callout>
-
-<p><b>关键文件：</b><code>depth_roi_demo.py</code>（核心算法 + 6 项模拟测试）、<code>depth_roi_demo_node.py</code>（ROS2 双画面节点）。</p>
-
 <h2>📋 实操检查清单</h2>
 
 <checkbox done="false">终端运行 python3 following_controller.py，确认三步输出正确</checkbox>
 <checkbox done="false">确认 P 控制在过近时 v=-0.500（后退），Object 控制 v=0.000（停转）</checkbox>
+<checkbox done="false">python3 depth_roi_demo.py — 6 项模拟测试通过（含模式对比 + 离群剔除）</checkbox>
 <checkbox done="false">colcon build --packages-select vision_basics 编译通过</checkbox>
 <checkbox done="false">ros2 launch vision_basics depth_follow.launch.py 启动成功</checkbox>
 <checkbox done="false">ros2 topic echo /cmd_vel 能看到实时速度输出</checkbox>
 <checkbox done="false">人靠近 0.5m 以内机器人自动停转</checkbox>
+<checkbox done="false">ros2 run vision_basics depth_roi_demo_node — 双画面显示，ROI 框/质心与 RGB 精确对齐</checkbox>
+<checkbox done="false">深度热力图颜色正常（近蓝远红，不是全红）——确认毫米→米转换生效</checkbox>
 <checkbox done="false">按逐章对照表修改参考版课程文档（8 处替换 + 4 处追加）</checkbox>
 
 <h2>📚 参考资料</h2>
